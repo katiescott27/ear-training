@@ -1,0 +1,147 @@
+/* Layout & container */
+.container {
+  max-width: 640px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.title {
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  margin-top: 0;
+  color: #555;
+}
+
+/* Scale selector row */
+.scaleRow {
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.scaleLabel {
+  display: inline-block;
+}
+
+.scaleControls {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.scaleSelect,
+.scaleReplayButton {
+  height: 100%;
+  padding: 0 0.75rem;
+  box-sizing: border-box;
+  font-size: 1rem;
+}
+
+.scaleSelect {
+  cursor: pointer;
+}
+
+.scaleReplayButton {
+  cursor: pointer;
+}
+
+.scaleHint {
+  font-size: 0.85rem;
+  color: #777;
+}
+
+/* Controls row */
+.controlsRow {
+  margin-bottom: 1rem;
+}
+
+.controlsRow button {
+  margin-right: 0.5rem;
+}
+
+/* Score */
+.scoreRow {
+  margin-bottom: 1rem;
+}
+
+/* Guess buttons */
+.guessButtonsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Result text */
+.resultMessage {
+  margin-bottom: 1rem;
+}
+
+.resultCorrect {
+  color: green;
+  margin: 0;
+}
+
+.resultIncorrect {
+  color: red;
+  margin: 0;
+}
+
+.hintMessage {
+  margin-top: 1rem;
+  font-style: italic;
+  color: #777;
+}
+
+/* Divider */
+.divider {
+  margin: 1.5rem 0;
+}
+
+/* History */
+.historyTitle {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.historyEmpty {
+  color: #777;
+}
+
+.historyContainer {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.historyTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.historyTable th,
+.historyTable td {
+  text-align: left;
+  padding: 0.25rem 0.5rem;
+}
+
+.historyTable td {
+  border-top: 1px solid #eee;
+}
+
+.historyResultCorrect {
+  color: green;
+}
+
+.historyResultIncorrect {
+  color: red;
+}

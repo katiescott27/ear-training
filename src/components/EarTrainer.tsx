@@ -1,23 +1,26 @@
 // src/components/EarTrainer.tsx
 
 import React, { useState } from 'react';
-import { SCALES, getScaleById } from '../audio/notes';
+import { getScaleById } from '../audio/notes';
 import { playFrequency, playScaleSequence } from '../audio/playNote';
-
 import type { NoteDef } from '../audio/notes';
 
-interface ResultState {
+import styles from './EarTrainer.module.css';
+import ScaleSelector from './ScaleSelector';
+import SessionHistory from './SessionHistory';
+
+export interface ResultState {
   correct: boolean;
   played: string;
   guess: string;
 }
 
-interface ScoreState {
+export interface ScoreState {
   correct: number;
   total: number;
 }
 
-interface Attempt {
+export interface Attempt {
   id: number;
   ts: number;
   played: string;
@@ -31,6 +34,8 @@ function getRandomNote(notes: NoteDef[]): NoteDef {
 }
 
 const EarTrainer: React.FC = () => {
+  const scaleControlHeightRem = 1.5;
+
   const [selectedScaleId, setSelectedScaleId] = useState<string>('c-major');
   const [currentNoteName, setCurrentNoteName] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<ResultState | null>(null);
@@ -41,32 +46,31 @@ const EarTrainer: React.FC = () => {
   const currentScale = getScaleById(selectedScaleId);
   const notes = currentScale.notes;
 
-  const handleScaleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newId = e.target.value;
+  const handleChangeScale = (newId: string) => {
     setSelectedScaleId(newId);
-
-    // Clear current round when changing scales
     setCurrentNoteName(null);
     setLastResult(null);
 
     const newScale = getScaleById(newId);
-    
-    // Using void is just to ignore the Promise cleanly
     void playScaleSequence(newScale.notes);
+  };
+
+  const handleReplayScale = () => {
+    void playScaleSequence(notes);
   };
 
   const handlePlayNewNote = () => {
     const note = getRandomNote(notes);
     setCurrentNoteName(note.name);
-    setLastResult(null); // clear previous result
-    playFrequency(note.freq);
+    setLastResult(null);
+    void playFrequency(note.freq);
   };
 
   const handleReplayNote = () => {
     if (!currentNoteName) return;
     const note = notes.find(n => n.name === currentNoteName);
     if (!note) return;
-    playFrequency(note.freq);
+    void playFrequency(note.freq);
   };
 
   const handleGuess = (guessName: string) => {
@@ -96,9 +100,8 @@ const EarTrainer: React.FC = () => {
       },
       ...prev,
     ]);
-    setNextId(id => id + 1);
 
-    // For now, end the round after one guess:
+    setNextId(id => id + 1);
     setCurrentNoteName(null);
   };
 
@@ -125,59 +128,24 @@ const EarTrainer: React.FC = () => {
   };
 
   return (
-    <div
-      style={{
-        maxWidth: 640,
-        margin: '2rem auto',
-        padding: '1.5rem',
-        borderRadius: 12,
-        border: '1px solid #ddd',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
-        fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, sans-serif',
-      }}
-    >
-      <h1 style={{ marginBottom: '0.5rem' }}>Ear Trainer</h1>
-      <p style={{ marginTop: 0, color: '#555' }}>
+    <div className={styles.container}>
+      <h1 className={styles.title}>Ear Trainer</h1>
+      <p className={styles.subtitle}>
         Choose a scale, press <strong>Play New Note</strong>, listen, then guess which note you
         heard.
       </p>
 
-      {/* Scale selector */}
-      <div
-        style={{
-          marginTop: '0.5rem',
-          marginBottom: '1rem',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0.5rem',
-        }}
-      >
-        <label htmlFor="scale-select">
-          <strong>Scale:</strong>
-        </label>
-        <select
-          id="scale-select"
-          value={selectedScaleId}
-          onChange={handleScaleChange}
-        >
-          {SCALES.map(scale => (
-            <option key={scale.id} value={scale.id}>
-              {scale.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      <ScaleSelector
+        selectedScaleId={selectedScaleId}
+        onChangeScale={handleChangeScale}
+        onReplayScale={handleReplayScale}
+        heightRem={scaleControlHeightRem}
+      />
 
       {/* Controls */}
-      <div style={{ marginBottom: '1rem' }}>
-        <button onClick={handlePlayNewNote} style={{ marginRight: '0.5rem' }}>
-          Play New Note
-        </button>
-        <button
-          onClick={handleReplayNote}
-          disabled={!currentNoteName}
-          style={{ marginRight: '0.5rem' }}
-        >
+      <div className={styles.controlsRow}>
+        <button onClick={handlePlayNewNote}>Play New Note</button>
+        <button onClick={handleReplayNote} disabled={!currentNoteName}>
           Replay Note
         </button>
         <button onClick={handleClearHistory} disabled={history.length === 0}>
@@ -186,19 +154,12 @@ const EarTrainer: React.FC = () => {
       </div>
 
       {/* Score */}
-      <div style={{ marginBottom: '1rem' }}>
+      <div className={styles.scoreRow}>
         <strong>Score:</strong> {scoreText}
       </div>
 
       {/* Guess buttons */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '0.5rem',
-          marginBottom: '1rem',
-        }}
-      >
+      <div className={styles.guessButtonsRow}>
         {notes.map((note, index) => (
           <button
             key={`${currentScale.id}-${index}`}
@@ -212,13 +173,13 @@ const EarTrainer: React.FC = () => {
 
       {/* Last result */}
       {lastResult && (
-        <div style={{ marginBottom: '1rem' }}>
+        <div className={styles.resultMessage}>
           {lastResult.correct ? (
-            <p style={{ color: 'green', margin: 0 }}>
+            <p className={styles.resultCorrect}>
               ✅ Correct! It was <strong>{lastResult.played}</strong>.
             </p>
           ) : (
-            <p style={{ color: 'red', margin: 0 }}>
+            <p className={styles.resultIncorrect}>
               ❌ Not quite. You guessed <strong>{lastResult.guess}</strong>, but it was{' '}
               <strong>{lastResult.played}</strong>.
             </p>
@@ -227,76 +188,15 @@ const EarTrainer: React.FC = () => {
       )}
 
       {!currentNoteName && !lastResult && (
-        <p style={{ marginTop: '1rem', fontStyle: 'italic', color: '#777' }}>
+        <p className={styles.hintMessage}>
           Press “Play New Note” to start a round.
         </p>
       )}
 
-      {/* Session history */}
-      <hr style={{ margin: '1.5rem 0' }} />
+      <hr className={styles.divider} />
 
-      <h2 style={{ marginTop: 0, marginBottom: '0.5rem' }}>Session History</h2>
-      {history.length === 0 ? (
-        <p style={{ color: '#777' }}>No attempts yet.</p>
-      ) : (
-        <div style={{ maxHeight: 240, overflowY: 'auto' }}>
-          <table
-            style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              fontSize: '0.9rem',
-            }}
-          >
-            <thead>
-              <tr>
-                <th style={{ textAlign: 'left', padding: '0.25rem 0.5rem' }}>Time</th>
-                <th style={{ textAlign: 'left', padding: '0.25rem 0.5rem' }}>Played</th>
-                <th style={{ textAlign: 'left', padding: '0.25rem 0.5rem' }}>Guess</th>
-                <th style={{ textAlign: 'left', padding: '0.25rem 0.5rem' }}>Result</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.map(attempt => (
-                <tr key={attempt.id}>
-                  <td
-                    style={{
-                      padding: '0.25rem 0.5rem',
-                      borderTop: '1px solid #eee',
-                    }}
-                  >
-                    {formatTime(attempt.ts)}
-                  </td>
-                  <td
-                    style={{
-                      padding: '0.25rem 0.5rem',
-                      borderTop: '1px solid #eee',
-                    }}
-                  >
-                    {attempt.played}
-                  </td>
-                  <td
-                    style={{
-                      padding: '0.25rem 0.5rem',
-                      borderTop: '1px solid #eee',
-                    }}
-                  >
-                    {attempt.guess}
-                  </td>
-                  <td
-                    style={{
-                      padding: '0.25rem 0.5rem',
-                      borderTop: '1px solid #eee',
-                      color: attempt.correct ? 'green' : 'red',
-                    }}
-                  >
-                    {attempt.correct ? 'Correct' : 'Incorrect'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <h2 className={styles.historyTitle}>Session History</h2>
+      <SessionHistory history={history} formatTime={formatTime} />
     </div>
   );
 };
