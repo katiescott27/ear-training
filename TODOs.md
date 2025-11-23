@@ -17,3 +17,10 @@
 4. Add real instrument samples (cached offline)
 
     * Store WAV files in OPFS for fast reuse.
+
+5. Other training modules:
+
+    * Intervals 
+    * Chords
+    * Modes (dorian phrygian etc)
+    * Circle of fifths theory?

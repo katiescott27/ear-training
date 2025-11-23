@@ -1,12 +1,20 @@
+// src/components/ScaleSelector.tsx
+
 import React from 'react';
 import styles from './EarTrainer.module.css';
-import { SCALES } from '../audio/notes';
+import type { ScaleDef, ScaleMode } from '../audio/notes';
+
+type ScaleFilterMode = 'all' | ScaleMode;
 
 interface ScaleSelectorProps {
   selectedScaleId: string;
   onChangeScale: (id: string) => void;
   onReplayScale: () => void;
   heightRem?: number;
+
+  scales: ScaleDef[];
+  filterMode: ScaleFilterMode;
+  onChangeFilterMode: (mode: ScaleFilterMode) => void;
 }
 
 const ScaleSelector: React.FC<ScaleSelectorProps> = ({
@@ -14,19 +22,50 @@ const ScaleSelector: React.FC<ScaleSelectorProps> = ({
   onChangeScale,
   onReplayScale,
   heightRem = 1.5,
+  scales,
+  filterMode,
+  onChangeFilterMode,
 }) => {
   const fontSize = `${heightRem * 0.6}rem`;
   const rowHeight = `${heightRem}rem`;
 
-  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleScaleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     onChangeScale(e.target.value);
   };
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value as ScaleFilterMode;
+    onChangeFilterMode(value);
+  };
+
+  const hasScales = scales.length > 0;
 
   return (
     <div
       className={styles.scaleRow}
       style={{ fontSize }}
     >
+      {/* Type filter */}
+      <label
+        htmlFor="scale-type-select"
+        className={styles.scaleLabel}
+        style={{ lineHeight: rowHeight, height: rowHeight }}
+      >
+        <strong>Type:</strong>
+      </label>
+      <select
+        id="scale-type-select"
+        value={filterMode}
+        onChange={handleFilterChange}
+        className={styles.scaleSelect}
+        style={{ height: rowHeight }}
+      >
+        <option value="all">All</option>
+        <option value="major">Major</option>
+        <option value="minor">Minor</option>
+      </select>
+
+      {/* Scale selector */}
       <label
         htmlFor="scale-select"
         className={styles.scaleLabel}
@@ -41,11 +80,12 @@ const ScaleSelector: React.FC<ScaleSelectorProps> = ({
       >
         <select
           id="scale-select"
-          value={selectedScaleId}
-          onChange={handleChange}
+          value={hasScales ? selectedScaleId : ''}
+          onChange={handleScaleChange}
           className={styles.scaleSelect}
+          disabled={!hasScales}
         >
-          {SCALES.map(scale => (
+          {scales.map(scale => (
             <option key={scale.id} value={scale.id}>
               {scale.label}
             </option>
@@ -56,6 +96,7 @@ const ScaleSelector: React.FC<ScaleSelectorProps> = ({
           type="button"
           onClick={onReplayScale}
           className={styles.scaleReplayButton}
+          disabled={!hasScales}
         >
           Play Scale Again
         </button>

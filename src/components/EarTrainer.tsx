@@ -1,7 +1,7 @@
 // src/components/EarTrainer.tsx
 
 import React, { useState } from 'react';
-import { getScaleById } from '../audio/notes';
+import { getScaleById, SCALES } from '../audio/notes';
 import { playFrequency, playScaleSequence } from '../audio/playNote';
 import type { NoteDef } from '../audio/notes';
 
@@ -12,7 +12,10 @@ import ControlsRow from './ControlsRow';
 import GuessButtons from './GuessButtons';
 import ResultMessage from './ResultMessage';
 
+import type { ScaleDef } from '../audio/notes';
 import type { ResultState, ScoreState, Attempt } from './types';
+
+type ScaleFilterMode = 'all' | 'major' | 'minor';
 
 function getRandomNote(notes: NoteDef[]): NoteDef {
   const idx = Math.floor(Math.random() * notes.length);
@@ -23,6 +26,8 @@ const EarTrainer: React.FC = () => {
   const scaleControlHeightRem = 1.5;
 
   const [selectedScaleId, setSelectedScaleId] = useState<string>('c-major');
+  const [scaleFilter, setScaleFilter] = useState<ScaleFilterMode>('all');
+  
   const [currentNoteName, setCurrentNoteName] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<ResultState | null>(null);
   const [score, setScore] = useState<ScoreState>({ correct: 0, total: 0 });
@@ -31,6 +36,12 @@ const EarTrainer: React.FC = () => {
 
   const currentScale = getScaleById(selectedScaleId);
   const notes = currentScale.notes;
+
+  const allScales: ScaleDef[] = SCALES;
+
+  const filteredScales = allScales.filter(scale =>
+    scaleFilter === 'all' ? true : scale.mode === scaleFilter
+  );
 
   const handleChangeScale = (newId: string) => {
     setSelectedScaleId(newId);
@@ -41,6 +52,20 @@ const EarTrainer: React.FC = () => {
     void playScaleSequence(newScale.notes);
   };
 
+  const handleChangeFilterMode = (mode: ScaleFilterMode) => {
+    setScaleFilter(mode);
+
+    const newFiltered = allScales.filter(scale =>
+      mode === 'all' ? true : scale.mode === mode
+    );
+
+    // If current selected scale is not in the new filter, switch to first filtered scale
+    if (!newFiltered.some(scale => scale.id === selectedScaleId) && newFiltered.length > 0) {
+      const first = newFiltered[0];
+      handleChangeScale(first.id);
+    }
+  };
+  
   const handleReplayScale = () => {
     void playScaleSequence(notes);
   };
@@ -126,6 +151,9 @@ const EarTrainer: React.FC = () => {
         onChangeScale={handleChangeScale}
         onReplayScale={handleReplayScale}
         heightRem={scaleControlHeightRem}
+        scales={filteredScales}
+        filterMode={scaleFilter}
+        onChangeFilterMode={handleChangeFilterMode}
       />
 
       <ControlsRow
