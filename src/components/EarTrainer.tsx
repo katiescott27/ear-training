@@ -8,25 +8,11 @@ import type { NoteDef } from '../audio/notes';
 import styles from './EarTrainer.module.css';
 import ScaleSelector from './ScaleSelector';
 import SessionHistory from './SessionHistory';
+import ControlsRow from './ControlsRow';
+import GuessButtons from './GuessButtons';
+import ResultMessage from './ResultMessage';
 
-export interface ResultState {
-  correct: boolean;
-  played: string;
-  guess: string;
-}
-
-export interface ScoreState {
-  correct: number;
-  total: number;
-}
-
-export interface Attempt {
-  id: number;
-  ts: number;
-  played: string;
-  guess: string;
-  correct: boolean;
-}
+import type { ResultState, ScoreState, Attempt } from './types';
 
 function getRandomNote(notes: NoteDef[]): NoteDef {
   const idx = Math.floor(Math.random() * notes.length);
@@ -142,50 +128,26 @@ const EarTrainer: React.FC = () => {
         heightRem={scaleControlHeightRem}
       />
 
-      {/* Controls */}
-      <div className={styles.controlsRow}>
-        <button onClick={handlePlayNewNote}>Play New Note</button>
-        <button onClick={handleReplayNote} disabled={!currentNoteName}>
-          Replay Note
-        </button>
-        <button onClick={handleClearHistory} disabled={history.length === 0}>
-          Clear History
-        </button>
-      </div>
+      <ControlsRow
+        onPlayNewNote={handlePlayNewNote}
+        onReplayNote={handleReplayNote}
+        onClearHistory={handleClearHistory}
+        disableReplay={!currentNoteName}
+        disableClear={history.length === 0}
+      />
 
-      {/* Score */}
       <div className={styles.scoreRow}>
         <strong>Score:</strong> {scoreText}
       </div>
 
-      {/* Guess buttons */}
-      <div className={styles.guessButtonsRow}>
-        {notes.map((note, index) => (
-          <button
-            key={`${currentScale.id}-${index}`}
-            onClick={() => handleGuess(note.name)}
-            disabled={!currentNoteName}
-          >
-            {note.name}
-          </button>
-        ))}
-      </div>
+      <GuessButtons
+        notes={notes}
+        currentScaleId={currentScale.id}
+        disabled={!currentNoteName}
+        onGuess={handleGuess}
+      />
 
-      {/* Last result */}
-      {lastResult && (
-        <div className={styles.resultMessage}>
-          {lastResult.correct ? (
-            <p className={styles.resultCorrect}>
-              ✅ Correct! It was <strong>{lastResult.played}</strong>.
-            </p>
-          ) : (
-            <p className={styles.resultIncorrect}>
-              ❌ Not quite. You guessed <strong>{lastResult.guess}</strong>, but it was{' '}
-              <strong>{lastResult.played}</strong>.
-            </p>
-          )}
-        </div>
-      )}
+      {lastResult && <ResultMessage lastResult={lastResult} />}
 
       {!currentNoteName && !lastResult && (
         <p className={styles.hintMessage}>

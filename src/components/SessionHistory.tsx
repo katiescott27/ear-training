@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './EarTrainer.module.css';
-import type { Attempt } from './EarTrainer';
+import type { Attempt } from './types';
 
 interface SessionHistoryProps {
   history: Attempt[];
