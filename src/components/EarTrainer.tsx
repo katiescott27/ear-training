@@ -1,6 +1,6 @@
 // src/components/EarTrainer.tsx
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 
 import {
   buildScaleAtOctave,
@@ -13,6 +13,14 @@ import {
   playScaleSequence,
 } from '../audio/playNote';
 
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import {
+  startNewRound,
+  clearCurrentNote,
+  recordAttempt,
+  clearHistory,
+} from '../store/trainerSlice';
+
 import styles from './EarTrainer.module.css';
 
 import ScaleSelector from './ScaleSelector';
@@ -21,30 +29,22 @@ import ControlsRow from './ControlsRow';
 import GuessButtons from './GuessButtons';
 import ResultMessage from './ResultMessage';
 
-import type {
-  ResultState,
-  ScoreState,
-  Attempt,
-} from './types';
-
 function getRandomNote(notes: NoteDef[]): NoteDef {
   const idx = Math.floor(Math.random() * notes.length);
   return notes[idx];
 }
 
 const EarTrainer: React.FC = () => {
-  // Start with no scale and no octave selected so the user must choose
-  const [selectedScaleId, setSelectedScaleId] = useState<string>('');
-  const [selectedOctave, setSelectedOctave] = useState<number | null>(null);
+  const dispatch = useAppDispatch();
 
-  const [currentNoteName, setCurrentNoteName] = useState<string | null>(null);
-  const [lastResult, setLastResult] = useState<ResultState | null>(null);
-  const [score, setScore] = useState<ScoreState>({
-    correct: 0,
-    total: 0,
-  });
-  const [history, setHistory] = useState<Attempt[]>([]);
-  const [nextId, setNextId] = useState<number>(1);
+  const {
+    selectedScaleId,
+    selectedOctave,
+    currentNoteName,
+    lastResult,
+    score,
+    history,
+  } = useAppSelector((state) => state.trainer);
 
   // Build the concrete scale *dynamically* from the selected id + octave
   const activeScale: ScaleDef | null = useMemo(() => {
@@ -54,18 +54,6 @@ const EarTrainer: React.FC = () => {
 
   const notes: NoteDef[] = activeScale?.notes ?? [];
 
-  const handleChangeScale = (newId: string) => {
-    setSelectedScaleId(newId);
-    setCurrentNoteName(null);
-    setLastResult(null);
-  };
-
-  const handleOctaveChange = (octave: number | null) => {
-    setSelectedOctave(octave);
-    setCurrentNoteName(null);
-    setLastResult(null);
-  };
-
   const handlePlayScale = () => {
     if (!activeScale) return;
     void playScaleSequence(activeScale.notes);
@@ -74,14 +62,13 @@ const EarTrainer: React.FC = () => {
   const handlePlayNewNote = () => {
     if (!notes.length) return; // no scale/octave chosen yet
     const note = getRandomNote(notes);
-    setCurrentNoteName(note.name);
-    setLastResult(null);
+    dispatch(startNewRound({ noteName: note.name }));
     void playFrequency(note.freq);
   };
 
   const handleReplayNote = () => {
     if (!currentNoteName || !notes.length) return;
-    const note = notes.find(n => n.name === currentNoteName);
+    const note = notes.find((n) => n.name === currentNoteName);
     if (!note) return;
     void playFrequency(note.freq);
   };
@@ -92,36 +79,21 @@ const EarTrainer: React.FC = () => {
     const isCorrect = guessName === currentNoteName;
     const ts = Date.now();
 
-    setLastResult({
-      correct: isCorrect,
-      played: currentNoteName,
-      guess: guessName,
-    });
-
-    setScore(prev => ({
-      correct: prev.correct + (isCorrect ? 1 : 0),
-      total: prev.total + 1,
-    }));
-
-    setHistory(prev => [
-      {
-        id: nextId,
-        ts,
+    dispatch(
+      recordAttempt({
         played: currentNoteName,
         guess: guessName,
         correct: isCorrect,
-      },
-      ...prev,
-    ]);
+        ts,
+      }),
+    );
 
-    setNextId(id => id + 1);
-    setCurrentNoteName(null);
+    // round is over; clear current note
+    dispatch(clearCurrentNote());
   };
 
   const handleClearHistory = () => {
-    setHistory([]);
-    setScore({ correct: 0, total: 0 });
-    setLastResult(null);
+    dispatch(clearHistory());
   };
 
   const scoreText =
@@ -140,7 +112,6 @@ const EarTrainer: React.FC = () => {
     });
   };
 
-  const canPlayScale = !!activeScale;
   const canPlayNote = !!activeScale;
 
   return (
@@ -151,16 +122,8 @@ const EarTrainer: React.FC = () => {
         guess which note you heard.
       </p>
 
-      <ScaleSelector
-        selectedScaleId={selectedScaleId}
-        selectedOctave={selectedOctave}
-        onScaleChange={handleChangeScale}
-        onOctaveChange={handleOctaveChange}
-        onPlayScale={handlePlayScale}       // NEW
-        canPlayScale={canPlayScale}         // NEW
-      />
-
-      {/* Play Scale button row removed – now inside ScaleSelector */}
+      {/* Scale + octave + Play Scale live partly in Redux, partly here */}
+      <ScaleSelector onPlayScale={handlePlayScale} />
 
       <ControlsRow
         onPlayNewNote={handlePlayNewNote}
@@ -182,9 +145,7 @@ const EarTrainer: React.FC = () => {
         onGuess={handleGuess}
       />
 
-      {lastResult && (
-        <ResultMessage lastResult={lastResult} />
-      )}
+      {lastResult && <ResultMessage lastResult={lastResult} />}
 
       {!currentNoteName && !lastResult && (
         <p className={styles.hintMessage}>
@@ -195,10 +156,7 @@ const EarTrainer: React.FC = () => {
       <hr className={styles.divider} />
 
       <h2 className={styles.historyTitle}>Session History</h2>
-      <SessionHistory
-        history={history}
-        formatTime={formatTime}
-      />
+      <SessionHistory history={history} formatTime={formatTime} />
     </div>
   );
 };

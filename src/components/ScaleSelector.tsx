@@ -1,42 +1,44 @@
 // src/components/ScaleSelector.tsx
 
 import React from 'react';
-import { getAllScaleSpecs, type ScaleMode } from '../audio/notes';
+import {
+  getAllScaleSpecs,
+  type ScaleMode,
+} from '../audio/notes';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { setScaleId, setOctave } from '../store/trainerSlice';
+
 import styles from './ScaleSelector.module.css';
 
 type ScaleFilterMode = 'all' | ScaleMode;
 type AccidentalFilter = 'all' | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 interface ScaleSelectorProps {
-  selectedScaleId: string;
-  selectedOctave: number | null;
-  onScaleChange: (id: string) => void;
-  onOctaveChange: (octave: number | null) => void;
-
-  onPlayScale: () => void;     // NEW
-  canPlayScale: boolean;       // NEW
+  onPlayScale: () => void;
 }
 
-const ScaleSelector: React.FC<ScaleSelectorProps> = ({
-  selectedScaleId,
-  selectedOctave,
-  onScaleChange,
-  onOctaveChange,
-  onPlayScale,
-  canPlayScale,
-}) => {
+const ScaleSelector: React.FC<ScaleSelectorProps> = ({ onPlayScale }) => {
+  const dispatch = useAppDispatch();
+  const { selectedScaleId, selectedOctave } = useAppSelector(
+    (state) => state.trainer,
+  );
+
   const scaleSpecs = getAllScaleSpecs();
 
-  const [modeFilter, setModeFilter] = React.useState<ScaleFilterMode>('all');
+  const [modeFilter, setModeFilter] =
+    React.useState<ScaleFilterMode>('all');
   const [accidentalFilter, setAccidentalFilter] =
     React.useState<AccidentalFilter>('all');
 
-  const resetScale = () => onScaleChange('');
+  const resetScale = () => {
+    dispatch(setScaleId(''));
+  };
 
   const filteredSpecs = React.useMemo(
     () =>
       scaleSpecs.filter((spec) => {
-        const modeOK = modeFilter === 'all' || spec.mode === modeFilter;
+        const modeOK =
+          modeFilter === 'all' || spec.mode === modeFilter;
         const accOK =
           accidentalFilter === 'all' ||
           spec.accidentalCount === accidentalFilter;
@@ -44,6 +46,17 @@ const ScaleSelector: React.FC<ScaleSelectorProps> = ({
       }),
     [scaleSpecs, modeFilter, accidentalFilter],
   );
+
+  const handleScaleChange = (id: string) => {
+    dispatch(setScaleId(id));
+  };
+
+  const handleOctaveChange = (octave: number | null) => {
+    dispatch(setOctave(octave));
+  };
+
+  const canPlayScale =
+    selectedScaleId !== '' && selectedOctave !== null;
 
   return (
     <div className={styles.container}>
@@ -68,7 +81,11 @@ const ScaleSelector: React.FC<ScaleSelectorProps> = ({
           {/* #/♭ Filter */}
           <select
             className={styles.select}
-            value={accidentalFilter === 'all' ? 'all' : String(accidentalFilter)}
+            value={
+              accidentalFilter === 'all'
+                ? 'all'
+                : String(accidentalFilter)
+            }
             onChange={(e) => {
               const v = e.target.value;
               const newFilter: AccidentalFilter =
@@ -98,7 +115,7 @@ const ScaleSelector: React.FC<ScaleSelectorProps> = ({
           <select
             className={styles.select}
             value={selectedScaleId || ''}
-            onChange={(e) => onScaleChange(e.target.value)}
+            onChange={(e) => handleScaleChange(e.target.value)}
           >
             <option value="">Choose Scale</option>
             {filteredSpecs.map((s) => (
@@ -114,7 +131,7 @@ const ScaleSelector: React.FC<ScaleSelectorProps> = ({
             value={selectedOctave ?? ''}
             onChange={(e) => {
               const v = e.target.value;
-              onOctaveChange(v ? Number(v) : null);
+              handleOctaveChange(v ? Number(v) : null);
             }}
           >
             <option value="">Octave</option>
@@ -123,7 +140,7 @@ const ScaleSelector: React.FC<ScaleSelectorProps> = ({
             <option value={5}>5</option>
           </select>
 
-          {/* Play Scale TEXT Button */}
+          {/* Play Scale Button */}
           <button
             className={styles.playButton}
             onClick={onPlayScale}
