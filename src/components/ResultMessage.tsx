@@ -1,7 +1,7 @@
 // src/components/ResultMessage.tsx
 
 import React from 'react';
-import styles from './EarTrainer.module.css';
+import styles from './TrainerCommon.module.css';
 import type { ResultState } from './types';
 
 interface ResultMessageProps {

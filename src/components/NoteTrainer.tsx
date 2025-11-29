@@ -1,4 +1,4 @@
-// src/components/EarTrainer.tsx
+// src/components/NoteTrainer.tsx
 
 import React, { useMemo } from 'react';
 
@@ -19,45 +19,51 @@ import {
   clearCurrentNote,
   recordAttempt,
   clearHistory,
-} from '../store/trainerSlice';
+} from '../store/noteGuessSlice';
 
-import styles from './EarTrainer.module.css';
+import styles from './TrainerCommon.module.css';
 
 import ScaleSelector from './ScaleSelector';
-import SessionHistory from './SessionHistory';
 import ControlsRow from './ControlsRow';
 import GuessButtons from './GuessButtons';
 import ResultMessage from './ResultMessage';
+import SessionHistory from './SessionHistory';
 
 function getRandomNote(notes: NoteDef[]): NoteDef {
   const idx = Math.floor(Math.random() * notes.length);
   return notes[idx];
 }
 
-const EarTrainer: React.FC = () => {
+const NoteTrainer: React.FC = () => {
   const dispatch = useAppDispatch();
 
+  const { selectedScaleId, selectedOctave } = useAppSelector(
+    (state) => state.core,
+  );
+
   const {
-    selectedScaleId,
-    selectedOctave,
     currentNoteName,
     lastResult,
     score,
     history,
-  } = useAppSelector((state) => state.trainer);
+  } = useAppSelector((state) => state.noteGuess);
 
-  // Build the concrete scale *dynamically* from the selected id + octave
+  // Build the concrete scale from the selected id + octave
   const activeScale: ScaleDef | null = useMemo(() => {
     if (!selectedScaleId || selectedOctave == null) return null;
     return buildScaleAtOctave(selectedScaleId, selectedOctave);
   }, [selectedScaleId, selectedOctave]);
 
   const notes: NoteDef[] = activeScale?.notes ?? [];
+  const canPlayNote = !!activeScale;
 
+  // === Play scale (delegated to ScaleSelector button) ===
   const handlePlayScale = () => {
     if (!activeScale) return;
     void playScaleSequence(activeScale.notes);
   };
+
+  // === NOTE GAME ===
 
   const handlePlayNewNote = () => {
     if (!notes.length) return; // no scale/octave chosen yet
@@ -73,7 +79,7 @@ const EarTrainer: React.FC = () => {
     void playFrequency(note.freq);
   };
 
-  const handleGuess = (guessName: string) => {
+  const handleGuessNote = (guessName: string) => {
     if (!currentNoteName) return;
 
     const isCorrect = guessName === currentNoteName;
@@ -88,11 +94,10 @@ const EarTrainer: React.FC = () => {
       }),
     );
 
-    // round is over; clear current note
     dispatch(clearCurrentNote());
   };
 
-  const handleClearHistory = () => {
+  const handleClearNoteHistory = () => {
     dispatch(clearHistory());
   };
 
@@ -112,23 +117,20 @@ const EarTrainer: React.FC = () => {
     });
   };
 
-  const canPlayNote = !!activeScale;
-
   return (
     <div className={styles.container}>
-      <h1 className={styles.title}>Ear Trainer</h1>
+      {/* GameScreen shows the big title; this can be a softer subtitle */}
       <p className={styles.subtitle}>
-        Choose a scale and octave, press <strong>Play New Note</strong>, listen, then
-        guess which note you heard.
+        Choose a scale and octave, then listen and identify single notes.
       </p>
 
-      {/* Scale + octave + Play Scale live partly in Redux, partly here */}
+      {/* Scale + octave + Play Scale (button lives inside ScaleSelector) */}
       <ScaleSelector onPlayScale={handlePlayScale} />
 
       <ControlsRow
         onPlayNewNote={handlePlayNewNote}
         onReplayNote={handleReplayNote}
-        onClearHistory={handleClearHistory}
+        onClearHistory={handleClearNoteHistory}
         disablePlayNew={!canPlayNote}
         disableReplay={!currentNoteName || !canPlayNote}
         disableClear={history.length === 0}
@@ -142,7 +144,7 @@ const EarTrainer: React.FC = () => {
         notes={notes}
         currentScaleId={activeScale?.id ?? ''}
         disabled={!currentNoteName || !canPlayNote}
-        onGuess={handleGuess}
+        onGuess={handleGuessNote}
       />
 
       {lastResult && <ResultMessage lastResult={lastResult} />}
@@ -161,4 +163,4 @@ const EarTrainer: React.FC = () => {
   );
 };
 
-export default EarTrainer;
+export default NoteTrainer;

@@ -1,3 +1,5 @@
+## Functional
+
 1. Build a “History” screen
 
     * Display past guesses with filtering (correct vs incorrect).
@@ -24,3 +26,7 @@
     * Chords
     * Modes (dorian phrygian etc)
     * Circle of fifths theory?
+
+## Styling
+
+1. Add automatic dark/light mode support

@@ -1,4 +1,4 @@
-// src/store/trainerSlice.ts
+// src/store/intervalSlice.ts
 
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type {
@@ -7,28 +7,19 @@ import type {
   Attempt,
 } from '../components/types';
 
-export interface TrainerState {
-  // selection
-  selectedScaleId: string;
-  selectedOctave: number | null;
-
-  // current round
-  currentNoteName: string | null;
+export interface IntervalState {
+  firstNoteName: string | null;
+  secondNoteName: string | null;
   lastResult: ResultState | null;
-
-  // stats + history
   score: ScoreState;
   history: Attempt[];
   nextId: number;
 }
 
-const initialState: TrainerState = {
-  selectedScaleId: '',
-  selectedOctave: null,
-
-  currentNoteName: null,
+const initialState: IntervalState = {
+  firstNoteName: null,
+  secondNoteName: null,
   lastResult: null,
-
   score: {
     correct: 0,
     total: 0,
@@ -37,28 +28,24 @@ const initialState: TrainerState = {
   nextId: 1,
 };
 
-const trainerSlice = createSlice({
-  name: 'trainer',
+const intervalSlice = createSlice({
+  name: 'interval',
   initialState,
   reducers: {
-    setScaleId(state, action: PayloadAction<string>) {
-      state.selectedScaleId = action.payload;
-      // changing the scale resets the current round result
-      state.currentNoteName = null;
+    startNewRound(
+      state,
+      action: PayloadAction<{
+        firstNoteName: string;
+        secondNoteName: string;
+      }>,
+    ) {
+      state.firstNoteName = action.payload.firstNoteName;
+      state.secondNoteName = action.payload.secondNoteName;
       state.lastResult = null;
     },
-    setOctave(state, action: PayloadAction<number | null>) {
-      state.selectedOctave = action.payload;
-      // changing octave resets the current round result
-      state.currentNoteName = null;
-      state.lastResult = null;
-    },
-    startNewRound(state, action: PayloadAction<{ noteName: string }>) {
-      state.currentNoteName = action.payload.noteName;
-      state.lastResult = null;
-    },
-    clearCurrentNote(state) {
-      state.currentNoteName = null;
+    clearIntervalNotes(state) {
+      state.firstNoteName = null;
+      state.secondNoteName = null;
     },
     recordAttempt(
       state,
@@ -97,17 +84,18 @@ const trainerSlice = createSlice({
       state.history = [];
       state.score = { correct: 0, total: 0 };
       state.lastResult = null;
+      state.firstNoteName = null;
+      state.secondNoteName = null;
     },
   },
 });
 
 export const {
-  setScaleId,
-  setOctave,
   startNewRound,
-  clearCurrentNote,
+  clearIntervalNotes,
   recordAttempt,
   clearHistory,
-} = trainerSlice.actions;
+} = intervalSlice.actions;
 
-export default trainerSlice.reducer;
+export const intervalReducer = intervalSlice.reducer;
+export default intervalReducer;

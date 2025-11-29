@@ -1,7 +1,7 @@
 // src/components/GuessButtons.tsx
 
 import React from 'react';
-import styles from './EarTrainer.module.css';
+import styles from './TrainerCommon.module.css';
 import type { NoteDef } from '../audio/notes';
 
 interface GuessButtonsProps {

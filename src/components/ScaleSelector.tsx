@@ -6,7 +6,7 @@ import {
   type ScaleMode,
 } from '../audio/notes';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { setScaleId, setOctave } from '../store/trainerSlice';
+import { setScaleId, setOctave } from '../store/coreSlice';
 
 import styles from './ScaleSelector.module.css';
 
@@ -20,7 +20,7 @@ interface ScaleSelectorProps {
 const ScaleSelector: React.FC<ScaleSelectorProps> = ({ onPlayScale }) => {
   const dispatch = useAppDispatch();
   const { selectedScaleId, selectedOctave } = useAppSelector(
-    (state) => state.trainer,
+    (state) => state.core,
   );
 
   const scaleSpecs = getAllScaleSpecs();
