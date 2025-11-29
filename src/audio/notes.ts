@@ -1,20 +1,40 @@
 // src/audio/notes.ts
 
+// --------------------
+// Types
+// --------------------
+
 export interface NoteDef {
-  name: string;  // label shown in UI (e.g., "C", "F#", "Bb")
-  freq: number;  // frequency in Hz
+  name: string;   // label shown in UI (e.g., "C", "F#", "Bb")
+  freq: number;   // frequency in Hz
 }
 
+// Extend this later: 'dorian' | 'mixolydian' | etc.
 export type ScaleMode = 'major' | 'minor';
 
 export interface ScaleDef {
   id: string;
-  label: string;
-  mode: ScaleMode;
-  notes: NoteDef[];
+  label: string;          // e.g. "C Major"
+  mode: ScaleMode;        // "major" | "minor" (later dorian, mixolydian, etc.)
+  tonic: string;          // e.g. "C", "G", "Bb"
+  notes: NoteDef[];       // array of { name: "C", freq: 261.63 }
+  accidentalCount: number; // number of sharps or flats in the key signature
 }
 
-// --- Frequency helpers (equal temperament, A4 = 440 Hz) ---
+// This is the static metadata that defines each key/scale.
+// No octave or concrete notes baked in here – just the "idea" of the scale.
+export interface ScaleSpec {
+  id: string;            // "c-major"
+  label: string;         // "C Major"
+  tonic: string;         // "C", "G", "Bb", etc. (as shown in UI)
+  mode: ScaleMode;       // "major" | "minor"
+  accidentalCount: number;
+  useFlats: boolean;     // true for flat keys, false for sharp keys
+}
+
+// --------------------
+// Tuning + pitch maps
+// --------------------
 
 const A4 = 440;
 
@@ -33,333 +53,348 @@ const PITCH_INDEX: Record<string, number> = {
   B: 11,
 };
 
+// Canonical labels for sharp / flat spellings
+const INDEX_TO_LABEL_SHARP: string[] = [
+  'C', 'C#', 'D', 'D#', 'E', 'F',
+  'F#', 'G', 'G#', 'A', 'A#', 'B',
+];
+
+const INDEX_TO_LABEL_FLAT: string[] = [
+  'C', 'Db', 'D', 'Eb', 'E', 'F',
+  'Gb', 'G', 'Ab', 'A', 'Bb', 'B',
+];
+
+// Map any label (sharp or flat spelling) to the pitch key
+// used for frequency lookup.
+const LABEL_TO_PITCH: Record<string, keyof typeof PITCH_INDEX> = {
+  C: 'C',
+  'C#': 'C#',
+  Db: 'C#',
+  D: 'D',
+  'D#': 'D#',
+  Eb: 'D#',
+  E: 'E',
+  F: 'F',
+  'F#': 'F#',
+  Gb: 'F#',
+  G: 'G',
+  'G#': 'G#',
+  Ab: 'G#',
+  A: 'A',
+  'A#': 'A#',
+  Bb: 'A#',
+  B: 'B',
+};
+
 /**
- * Compute frequency for a note in equal temperament.
- * noteName: like "C", "F#", "A", etc.
- * octave: integer like 3, 4, 5 (C4 ~ middle C).
+ * Equal-temperament frequency: A4 = 440 Hz.
  */
-function freq(noteName: keyof typeof PITCH_INDEX, octave: number): number {
+function freq(
+  noteName: keyof typeof PITCH_INDEX,
+  octave: number,
+): number {
   const pitchIndex = PITCH_INDEX[noteName];
-  const midi = 12 * (octave + 1) + pitchIndex; // MIDI note number
+  const midi = 12 * (octave + 1) + pitchIndex;
   const a4Midi = 69;
   const semitoneOffset = midi - a4Midi;
   const f = A4 * Math.pow(2, semitoneOffset / 12);
   return parseFloat(f.toFixed(2));
 }
 
-/**
- * Convenience helper to create a NoteDef.
- * label: what the user sees on the button ("C", "F#", "Bb", etc.)
- * noteName: the pitch (for frequency), e.g., "C", "F#", "A#" (matching PITCH_INDEX keys)
- * octave: integer
- */
-function note(label: string, noteName: keyof typeof PITCH_INDEX, octave: number): NoteDef {
+function note(
+  label: string,
+  pitchName: keyof typeof PITCH_INDEX,
+  octave: number,
+): NoteDef {
   return {
     name: label,
-    freq: freq(noteName, octave),
+    freq: freq(pitchName, octave),
   };
 }
 
-// --- Major scales (one-octave, root to root) ---
+// --------------------
+// Mode interval tables
+// --------------------
 
-// C Major: C4–C5
-const C_MAJOR_NOTES: NoteDef[] = [
-  note('C', 'C', 4),
-  note('D', 'D', 4),
-  note('E', 'E', 4),
-  note('F', 'F', 4),
-  note('G', 'G', 4),
-  note('A', 'A', 4),
-  note('B', 'B', 4),
-  note('C', 'C', 5),
-];
+// Semitone offsets from the tonic, including the octave (12).
+// These arrays all have length 8 (1–7 + octave).
 
-// G Major: G3–G4 (F#)
-const G_MAJOR_NOTES: NoteDef[] = [
-  note('G', 'G', 3),
-  note('A', 'A', 3),
-  note('B', 'B', 3),
-  note('C', 'C', 4),
-  note('D', 'D', 4),
-  note('E', 'E', 4),
-  note('F#', 'F#', 4),
-  note('G', 'G', 4),
-];
+const MODE_INTERVALS: Record<ScaleMode, number[]> = {
+  // Ionian (major): 1 2 3 4 5 6 7 8
+  // Steps: W W H W W W H
+  major: [0, 2, 4, 5, 7, 9, 11, 12],
 
-// D Major: D3–D4 (F#, C#)
-const D_MAJOR_NOTES: NoteDef[] = [
-  note('D', 'D', 3),
-  note('E', 'E', 3),
-  note('F#', 'F#', 3),
-  note('G', 'G', 3),
-  note('A', 'A', 3),
-  note('B', 'B', 3),
-  note('C#', 'C#', 4),
-  note('D', 'D', 4),
-];
+  // Aeolian (natural minor): 1 2 b3 4 5 b6 b7 8
+  // Steps: W H W W H W W
+  minor: [0, 2, 3, 5, 7, 8, 10, 12],
+};
 
-// A Major: A3–A4 (F#, C#, G#)
-const A_MAJOR_NOTES: NoteDef[] = [
-  note('A', 'A', 3),
-  note('B', 'B', 3),
-  note('C#', 'C#', 4),
-  note('D', 'D', 4),
-  note('E', 'E', 4),
-  note('F#', 'F#', 4),
-  note('G#', 'G#', 4),
-  note('A', 'A', 4),
-];
+// --------------------
+// Scale metadata specs
+// --------------------
 
-// E Major: E3–E4 (F#, G#, C#, D#)
-const E_MAJOR_NOTES: NoteDef[] = [
-  note('E', 'E', 3),
-  note('F#', 'F#', 3),
-  note('G#', 'G#', 3),
-  note('A', 'A', 3),
-  note('B', 'B', 3),
-  note('C#', 'C#', 4),
-  note('D#', 'D#', 4),
-  note('E', 'E', 4),
-];
+// You can add more keys here easily, or add new modes later.
+// By convention, if you don't pass a rootOctave, we'll build into 4 → 5.
 
-// B Major: B2–B3 (F#, C#, G#, D#, A#)
-const B_MAJOR_NOTES: NoteDef[] = [
-  note('B', 'B', 2),
-  note('C#', 'C#', 3),
-  note('D#', 'D#', 3),
-  note('E', 'E', 3),
-  note('F#', 'F#', 3),
-  note('G#', 'G#', 3),
-  note('A#', 'A#', 3),
-  note('B', 'B', 3),
-];
-
-// F# Major: F#2–F#3
-const F_SHARP_MAJOR_NOTES: NoteDef[] = [
-  note('F#', 'F#', 2),
-  note('G#', 'G#', 2),
-  note('A#', 'A#', 2),
-  note('B', 'B', 2),
-  note('C#', 'C#', 3),
-  note('D#', 'D#', 3),
-  note('F', 'F', 3),   // enharmonic of E# (simplified)
-  note('F#', 'F#', 3),
-];
-
-// C# Major: C#3–C#4 (simplified enharmonics)
-const C_SHARP_MAJOR_NOTES: NoteDef[] = [
-  note('C#', 'C#', 3),
-  note('D#', 'D#', 3),
-  note('F', 'F', 3),   // E#
-  note('F#', 'F#', 3),
-  note('G#', 'G#', 3),
-  note('A#', 'A#', 3),
-  note('C', 'C', 4),   // B#
-  note('C#', 'C#', 4),
-];
-
-// F Major: F3–F4 (Bb)
-const F_MAJOR_NOTES: NoteDef[] = [
-  note('F', 'F', 3),
-  note('G', 'G', 3),
-  note('A', 'A', 3),
-  note('Bb', 'A#', 3),
-  note('C', 'C', 4),
-  note('D', 'D', 4),
-  note('E', 'E', 4),
-  note('F', 'F', 4),
-];
-
-// Bb Major: Bb2–Bb3 (Bb, Eb)
-const B_FLAT_MAJOR_NOTES: NoteDef[] = [
-  note('Bb', 'A#', 2),
-  note('C', 'C', 3),
-  note('D', 'D', 3),
-  note('Eb', 'D#', 3),
-  note('F', 'F', 3),
-  note('G', 'G', 3),
-  note('A', 'A', 3),
-  note('Bb', 'A#', 3),
-];
-
-// Eb Major: Eb3–Eb4 (Bb, Eb, Ab)
-const E_FLAT_MAJOR_NOTES: NoteDef[] = [
-  note('Eb', 'D#', 3),
-  note('F', 'F', 3),
-  note('G', 'G', 3),
-  note('Ab', 'G#', 3),
-  note('Bb', 'A#', 3),
-  note('C', 'C', 4),
-  note('D', 'D', 4),
-  note('Eb', 'D#', 4),
-];
-
-// Ab Major: Ab3–Ab4
-const A_FLAT_MAJOR_NOTES: NoteDef[] = [
-  note('Ab', 'G#', 3),
-  note('Bb', 'A#', 3),
-  note('C', 'C', 4),
-  note('Db', 'C#', 4),
-  note('Eb', 'D#', 4),
-  note('F', 'F', 4),
-  note('G', 'G', 4),
-  note('Ab', 'G#', 4),
-];
-
-// Db Major: Db3–Db4
-const D_FLAT_MAJOR_NOTES: NoteDef[] = [
-  note('Db', 'C#', 3),
-  note('Eb', 'D#', 3),
-  note('F', 'F', 3),
-  note('Gb', 'F#', 3),
-  note('Ab', 'G#', 3),
-  note('Bb', 'A#', 3),
-  note('C', 'C', 4),
-  note('Db', 'C#', 4),
-];
-
-// Gb Major: Gb2–Gb3
-const G_FLAT_MAJOR_NOTES: NoteDef[] = [
-  note('Gb', 'F#', 2),
-  note('Ab', 'G#', 2),
-  note('Bb', 'A#', 2),
-  note('Cb', 'B', 2),
-  note('Db', 'C#', 3),
-  note('Eb', 'D#', 3),
-  note('F', 'F', 3),
-  note('Gb', 'F#', 3),
-];
-
-// --- Natural Minor Scales ---
-
-const A_MINOR_NOTES: NoteDef[] = [
-  note('A', 'A', 3),
-  note('B', 'B', 3),
-  note('C', 'C', 4),
-  note('D', 'D', 4),
-  note('E', 'E', 4),
-  note('F', 'F', 4),
-  note('G', 'G', 4),
-  note('A', 'A', 4),
-];
-
-// E natural minor (relative to G major): E F# G A B C D E
-const E_MINOR_NOTES: NoteDef[] = [
-  note('E', 'E', 3),
-  note('F#', 'F#', 3),
-  note('G', 'G', 3),
-  note('A', 'A', 3),
-  note('B', 'B', 3),
-  note('C', 'C', 4),
-  note('D', 'D', 4),
-  note('E', 'E', 4),
-];
-
-// B natural minor (relative to D major): B C# D E F# G A B
-const B_MINOR_NOTES: NoteDef[] = [
-  note('B', 'B', 2),
-  note('C#', 'C#', 3),
-  note('D', 'D', 3),
-  note('E', 'E', 3),
-  note('F#', 'F#', 3),
-  note('G', 'G', 3),
-  note('A', 'A', 3),
-  note('B', 'B', 3),
-];
-
-// F# natural minor (relative to A major): F# G# A B C# D E F#
-const F_SHARP_MINOR_NOTES: NoteDef[] = [
-  note('F#', 'F#', 3),
-  note('G#', 'G#', 3),
-  note('A', 'A', 3),
-  note('B', 'B', 3),
-  note('C#', 'C#', 4),
-  note('D', 'D', 4),
-  note('E', 'E', 4),
-  note('F#', 'F#', 4),
-];
-
-// C# natural minor (relative to E major): C# D# E F# G# A B C#
-const C_SHARP_MINOR_NOTES: NoteDef[] = [
-  note('C#', 'C#', 3),
-  note('D#', 'D#', 3),
-  note('E', 'E', 3),
-  note('F#', 'F#', 3),
-  note('G#', 'G#', 3),
-  note('A', 'A', 3),
-  note('B', 'B', 3),
-  note('C#', 'C#', 4),
-];
-
-// D natural minor (relative to F major): D E F G A Bb C D
-const D_MINOR_NOTES: NoteDef[] = [
-  note('D', 'D', 3),
-  note('E', 'E', 3),
-  note('F', 'F', 3),
-  note('G', 'G', 3),
-  note('A', 'A', 3),
-  note('Bb', 'A#', 3),
-  note('C', 'C', 4),
-  note('D', 'D', 4),
-];
-
-// G natural minor (relative to Bb major): G A Bb C D Eb F G
-const G_MINOR_NOTES: NoteDef[] = [
-  note('G', 'G', 3),
-  note('A', 'A', 3),
-  note('Bb', 'A#', 3),
-  note('C', 'C', 4),
-  note('D', 'D', 4),
-  note('Eb', 'D#', 4),
-  note('F', 'F', 4),
-  note('G', 'G', 4),
-];
-
-// C natural minor (relative to Eb major): C D Eb F G Ab Bb C
-const C_MINOR_NOTES: NoteDef[] = [
-  note('C', 'C', 4),
-  note('D', 'D', 4),
-  note('Eb', 'D#', 4),
-  note('F', 'F', 4),
-  note('G', 'G', 4),
-  note('Ab', 'G#', 4),
-  note('Bb', 'A#', 4),
-  note('C', 'C', 5),
-];
-
-// --- Exported scales list ---
-
-export const SCALES: ScaleDef[] = [
+const SCALE_SPECS: ScaleSpec[] = [
   // Major – natural & sharp keys
-  { id: 'c-major', label: 'C Major', mode: 'major', notes: C_MAJOR_NOTES },
-  { id: 'g-major', label: 'G Major', mode: 'major', notes: G_MAJOR_NOTES },
-  { id: 'd-major', label: 'D Major', mode: 'major', notes: D_MAJOR_NOTES },
-  { id: 'a-major', label: 'A Major', mode: 'major', notes: A_MAJOR_NOTES },
-  { id: 'e-major', label: 'E Major', mode: 'major', notes: E_MAJOR_NOTES },
-  { id: 'b-major', label: 'B Major', mode: 'major', notes: B_MAJOR_NOTES },
-  { id: 'f-sharp-major', label: 'F# Major', mode: 'major', notes: F_SHARP_MAJOR_NOTES },
-  { id: 'c-sharp-major', label: 'C# Major', mode: 'major', notes: C_SHARP_MAJOR_NOTES },
+  {
+    id: 'c-major',
+    label: 'C Major',
+    tonic: 'C',
+    mode: 'major',
+    accidentalCount: 0,
+    useFlats: false,
+  },
+  {
+    id: 'g-major',
+    label: 'G Major',
+    tonic: 'G',
+    mode: 'major',
+    accidentalCount: 1,
+    useFlats: false,
+  },
+  {
+    id: 'd-major',
+    label: 'D Major',
+    tonic: 'D',
+    mode: 'major',
+    accidentalCount: 2,
+    useFlats: false,
+  },
+  {
+    id: 'a-major',
+    label: 'A Major',
+    tonic: 'A',
+    mode: 'major',
+    accidentalCount: 3,
+    useFlats: false,
+  },
+  {
+    id: 'e-major',
+    label: 'E Major',
+    tonic: 'E',
+    mode: 'major',
+    accidentalCount: 4,
+    useFlats: false,
+  },
+  {
+    id: 'b-major',
+    label: 'B Major',
+    tonic: 'B',
+    mode: 'major',
+    accidentalCount: 5,
+    useFlats: false,
+  },
+  {
+    id: 'f-sharp-major',
+    label: 'F# Major',
+    tonic: 'F#',
+    mode: 'major',
+    accidentalCount: 6,
+    useFlats: false,
+  },
+  {
+    id: 'c-sharp-major',
+    label: 'C# Major',
+    tonic: 'C#',
+    mode: 'major',
+    accidentalCount: 7,
+    useFlats: false,
+  },
 
   // Major – flat keys
-  { id: 'f-major', label: 'F Major', mode: 'major', notes: F_MAJOR_NOTES },
-  { id: 'bb-major', label: 'Bb Major', mode: 'major', notes: B_FLAT_MAJOR_NOTES },
-  { id: 'eb-major', label: 'Eb Major', mode: 'major', notes: E_FLAT_MAJOR_NOTES },
-  { id: 'ab-major', label: 'Ab Major', mode: 'major', notes: A_FLAT_MAJOR_NOTES },
-  { id: 'db-major', label: 'Db Major', mode: 'major', notes: D_FLAT_MAJOR_NOTES },
-  { id: 'gb-major', label: 'Gb Major', mode: 'major', notes: G_FLAT_MAJOR_NOTES },
+  {
+    id: 'f-major',
+    label: 'F Major',
+    tonic: 'F',
+    mode: 'major',
+    accidentalCount: 1,
+    useFlats: true,
+  },
+  {
+    id: 'bb-major',
+    label: 'Bb Major',
+    tonic: 'Bb',
+    mode: 'major',
+    accidentalCount: 2,
+    useFlats: true,
+  },
+  {
+    id: 'eb-major',
+    label: 'Eb Major',
+    tonic: 'Eb',
+    mode: 'major',
+    accidentalCount: 3,
+    useFlats: true,
+  },
+  {
+    id: 'ab-major',
+    label: 'Ab Major',
+    tonic: 'Ab',
+    mode: 'major',
+    accidentalCount: 4,
+    useFlats: true,
+  },
+  {
+    id: 'db-major',
+    label: 'Db Major',
+    tonic: 'Db',
+    mode: 'major',
+    accidentalCount: 5,
+    useFlats: true,
+  },
+  {
+    id: 'gb-major',
+    label: 'Gb Major',
+    tonic: 'Gb',
+    mode: 'major',
+    accidentalCount: 6,
+    useFlats: true,
+  },
 
-    // Minor (natural minor / Aeolian)
-  { id: 'a-minor', label: 'A Minor', mode: 'minor', notes: A_MINOR_NOTES },
-  { id: 'e-minor', label: 'E Minor', mode: 'minor', notes: E_MINOR_NOTES },
-  { id: 'b-minor', label: 'B Minor', mode: 'minor', notes: B_MINOR_NOTES },
-  { id: 'f-sharp-minor', label: 'F# Minor', mode: 'minor', notes: F_SHARP_MINOR_NOTES },
-  { id: 'c-sharp-minor', label: 'C# Minor', mode: 'minor', notes: C_SHARP_MINOR_NOTES },
-  { id: 'd-minor', label: 'D Minor', mode: 'minor', notes: D_MINOR_NOTES },
-  { id: 'g-minor', label: 'G Minor', mode: 'minor', notes: G_MINOR_NOTES },
-  { id: 'c-minor', label: 'C Minor', mode: 'minor', notes: C_MINOR_NOTES },
+  // Minor – natural minor (Aeolian)
+  {
+    id: 'a-minor',
+    label: 'A Minor',
+    tonic: 'A',
+    mode: 'minor',
+    accidentalCount: 0, // relative to C
+    useFlats: false,
+  },
+  {
+    id: 'e-minor',
+    label: 'E Minor',
+    tonic: 'E',
+    mode: 'minor',
+    accidentalCount: 1, // relative to G
+    useFlats: false,
+  },
+  {
+    id: 'b-minor',
+    label: 'B Minor',
+    tonic: 'B',
+    mode: 'minor',
+    accidentalCount: 2, // relative to D
+    useFlats: false,
+  },
+  {
+    id: 'f-sharp-minor',
+    label: 'F# Minor',
+    tonic: 'F#',
+    mode: 'minor',
+    accidentalCount: 3, // relative to A
+    useFlats: false,
+  },
+  {
+    id: 'c-sharp-minor',
+    label: 'C# Minor',
+    tonic: 'C#',
+    mode: 'minor',
+    accidentalCount: 4, // relative to E
+    useFlats: false,
+  },
+  {
+    id: 'd-minor',
+    label: 'D Minor',
+    tonic: 'D',
+    mode: 'minor',
+    accidentalCount: 1, // relative to F
+    useFlats: true,
+  },
+  {
+    id: 'g-minor',
+    label: 'G Minor',
+    tonic: 'G',
+    mode: 'minor',
+    accidentalCount: 2, // relative to Bb
+    useFlats: true,
+  },
+  {
+    id: 'c-minor',
+    label: 'C Minor',
+    tonic: 'C',
+    mode: 'minor',
+    accidentalCount: 3, // relative to Eb
+    useFlats: true,
+  },
 ];
 
-export function getScaleById(id: string): ScaleDef {
-  const scale = SCALES.find(s => s.id === id);
-  return scale ?? SCALES[0]; // default to C major
+// --------------------
+// Scale construction (core logic)
+// --------------------
+
+/**
+ * Build a concrete scale (ScaleDef) from a ScaleSpec:
+ * - Uses the mode's interval pattern (major / natural minor)
+ * - Uses sharp or flat spellings depending on useFlats
+ * - Places tonic in the specified rootOctave (default = 4),
+ *   with the octave tonic in rootOctave + 1.
+ */
+function buildScaleFromSpec(
+  spec: ScaleSpec,
+  rootOctave: number = 4,
+): ScaleDef {
+  const intervals = MODE_INTERVALS[spec.mode];
+
+  const tonicPitchName = LABEL_TO_PITCH[spec.tonic];
+  const tonicIndex = PITCH_INDEX[tonicPitchName];
+
+  const labelTable = spec.useFlats
+    ? INDEX_TO_LABEL_FLAT
+    : INDEX_TO_LABEL_SHARP;
+
+  const startingOctave = rootOctave;
+
+  const notes: NoteDef[] = intervals.map((offset, degree) => {
+    const pitchIndex = (tonicIndex + offset) % 12;
+    const label = labelTable[pitchIndex];
+    const pitchName = LABEL_TO_PITCH[label];
+    const octave =
+      pitchIndex < tonicIndex || degree === 7
+        ? startingOctave + 1
+        : startingOctave;
+
+    return note(label, pitchName, octave);
+  });
+
+  return {
+    id: spec.id,
+    label: spec.label,
+    mode: spec.mode,
+    tonic: spec.tonic,
+    notes,
+    accidentalCount: spec.accidentalCount,
+  };
+}
+
+// --------------------
+// Public API for UI + playback
+// --------------------
+
+/**
+ * Return all scale specs (metadata) for populating dropdowns, filters, etc.
+ * These DO NOT include concrete notes or octave info.
+ */
+export function getAllScaleSpecs(): readonly ScaleSpec[] {
+  return SCALE_SPECS;
+}
+
+/**
+ * Look up a single ScaleSpec by id.
+ */
+export function getScaleSpecById(id: string): ScaleSpec | undefined {
+  return SCALE_SPECS.find(s => s.id === id);
+}
+
+/**
+ * Build a concrete ScaleDef at a specific root octave, e.g. 3, 4, 5.
+ * Use this when you actually want to PLAY the scale.
+ */
+export function buildScaleAtOctave(
+  id: string,
+  rootOctave: number,
+): ScaleDef {
+  const spec = getScaleSpecById(id) ?? SCALE_SPECS[0];
+  return buildScaleFromSpec(spec, rootOctave);
 }

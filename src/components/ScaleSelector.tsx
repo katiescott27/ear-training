@@ -1,110 +1,138 @@
 // src/components/ScaleSelector.tsx
 
 import React from 'react';
-import styles from './EarTrainer.module.css';
-import type { ScaleDef, ScaleMode } from '../audio/notes';
+import { getAllScaleSpecs, type ScaleMode } from '../audio/notes';
+import styles from './ScaleSelector.module.css';
 
 type ScaleFilterMode = 'all' | ScaleMode;
+type AccidentalFilter = 'all' | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 interface ScaleSelectorProps {
   selectedScaleId: string;
-  onChangeScale: (id: string) => void;
-  onReplayScale: () => void;
-  heightRem?: number;
+  selectedOctave: number | null;
+  onScaleChange: (id: string) => void;
+  onOctaveChange: (octave: number | null) => void;
 
-  scales: ScaleDef[];
-  filterMode: ScaleFilterMode;
-  onChangeFilterMode: (mode: ScaleFilterMode) => void;
+  onPlayScale: () => void;     // NEW
+  canPlayScale: boolean;       // NEW
 }
 
 const ScaleSelector: React.FC<ScaleSelectorProps> = ({
   selectedScaleId,
-  onChangeScale,
-  onReplayScale,
-  heightRem = 1.5,
-  scales,
-  filterMode,
-  onChangeFilterMode,
+  selectedOctave,
+  onScaleChange,
+  onOctaveChange,
+  onPlayScale,
+  canPlayScale,
 }) => {
-  const fontSize = `${heightRem * 0.6}rem`;
-  const rowHeight = `${heightRem}rem`;
+  const scaleSpecs = getAllScaleSpecs();
 
-  const handleScaleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    onChangeScale(e.target.value);
-  };
+  const [modeFilter, setModeFilter] = React.useState<ScaleFilterMode>('all');
+  const [accidentalFilter, setAccidentalFilter] =
+    React.useState<AccidentalFilter>('all');
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value as ScaleFilterMode;
-    onChangeFilterMode(value);
-  };
+  const resetScale = () => onScaleChange('');
 
-  const hasScales = scales.length > 0;
+  const filteredSpecs = React.useMemo(
+    () =>
+      scaleSpecs.filter((spec) => {
+        const modeOK = modeFilter === 'all' || spec.mode === modeFilter;
+        const accOK =
+          accidentalFilter === 'all' ||
+          spec.accidentalCount === accidentalFilter;
+        return modeOK && accOK;
+      }),
+    [scaleSpecs, modeFilter, accidentalFilter],
+  );
 
   return (
-    <div
-      className={styles.scaleRow}
-      style={{ fontSize }}
-    >
-      {/* Type filter */}
-      <label
-        htmlFor="scale-type-select"
-        className={styles.scaleLabel}
-        style={{ lineHeight: rowHeight, height: rowHeight }}
-      >
-        <strong>Type:</strong>
-      </label>
-      <select
-        id="scale-type-select"
-        value={filterMode}
-        onChange={handleFilterChange}
-        className={styles.scaleSelect}
-        style={{ height: rowHeight }}
-      >
-        <option value="all">All</option>
-        <option value="major">Major</option>
-        <option value="minor">Minor</option>
-      </select>
+    <div className={styles.container}>
+      {/* Filters Section */}
+      <div className={styles.group}>
+        <div className={styles.groupTitle}>Filters</div>
+        <div className={styles.groupRow}>
+          {/* Mode */}
+          <select
+            className={styles.select}
+            value={modeFilter}
+            onChange={(e) => {
+              setModeFilter(e.target.value as ScaleFilterMode);
+              resetScale();
+            }}
+          >
+            <option value="all">Mode (All)</option>
+            <option value="major">Major</option>
+            <option value="minor">Minor</option>
+          </select>
 
-      {/* Scale selector */}
-      <label
-        htmlFor="scale-select"
-        className={styles.scaleLabel}
-        style={{ lineHeight: rowHeight, height: rowHeight }}
-      >
-        <strong>Scale:</strong>
-      </label>
-
-      <div
-        className={styles.scaleControls}
-        style={{ height: rowHeight }}
-      >
-        <select
-          id="scale-select"
-          value={hasScales ? selectedScaleId : ''}
-          onChange={handleScaleChange}
-          className={styles.scaleSelect}
-          disabled={!hasScales}
-        >
-          {scales.map(scale => (
-            <option key={scale.id} value={scale.id}>
-              {scale.label}
-            </option>
-          ))}
-        </select>
-
-        <button
-          type="button"
-          onClick={onReplayScale}
-          className={styles.scaleReplayButton}
-          disabled={!hasScales}
-        >
-          Play Scale Again
-        </button>
+          {/* #/♭ Filter */}
+          <select
+            className={styles.select}
+            value={accidentalFilter === 'all' ? 'all' : String(accidentalFilter)}
+            onChange={(e) => {
+              const v = e.target.value;
+              const newFilter: AccidentalFilter =
+                v === 'all' ? 'all' : (Number(v) as AccidentalFilter);
+              setAccidentalFilter(newFilter);
+              resetScale();
+            }}
+          >
+            <option value="all">#/♭ (All)</option>
+            <option value="0">0 #/♭</option>
+            <option value="1">1 #/♭</option>
+            <option value="2">2 #/♭</option>
+            <option value="3">3 #/♭</option>
+            <option value="4">4 #/♭</option>
+            <option value="5">5 #/♭</option>
+            <option value="6">6 #/♭</option>
+            <option value="7">7 #/♭</option>
+          </select>
+        </div>
       </div>
 
-      <span className={styles.scaleHint}>
-        (Scale plays ascending once)
-      </span>
+      {/* Selection Section */}
+      <div className={styles.group}>
+        <div className={styles.groupTitle}>Selection</div>
+        <div className={styles.groupRow}>
+          {/* Scale */}
+          <select
+            className={styles.select}
+            value={selectedScaleId || ''}
+            onChange={(e) => onScaleChange(e.target.value)}
+          >
+            <option value="">Choose Scale</option>
+            {filteredSpecs.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+
+          {/* Octave */}
+          <select
+            className={styles.select}
+            value={selectedOctave ?? ''}
+            onChange={(e) => {
+              const v = e.target.value;
+              onOctaveChange(v ? Number(v) : null);
+            }}
+          >
+            <option value="">Octave</option>
+            <option value={3}>3</option>
+            <option value={4}>4</option>
+            <option value={5}>5</option>
+          </select>
+
+          {/* Play Scale TEXT Button */}
+          <button
+            className={styles.playButton}
+            onClick={onPlayScale}
+            disabled={!canPlayScale}
+          >
+            Play Scale
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

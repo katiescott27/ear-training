@@ -1,21 +1,31 @@
 // src/components/EarTrainer.tsx
 
-import React, { useState } from 'react';
-import { getScaleById, SCALES } from '../audio/notes';
-import { playFrequency, playScaleSequence } from '../audio/playNote';
-import type { NoteDef } from '../audio/notes';
+import React, { useMemo, useState } from 'react';
+
+import {
+  buildScaleAtOctave,
+  type NoteDef,
+  type ScaleDef,
+} from '../audio/notes';
+
+import {
+  playFrequency,
+  playScaleSequence,
+} from '../audio/playNote';
 
 import styles from './EarTrainer.module.css';
+
 import ScaleSelector from './ScaleSelector';
 import SessionHistory from './SessionHistory';
 import ControlsRow from './ControlsRow';
 import GuessButtons from './GuessButtons';
 import ResultMessage from './ResultMessage';
 
-import type { ScaleDef } from '../audio/notes';
-import type { ResultState, ScoreState, Attempt } from './types';
-
-type ScaleFilterMode = 'all' | 'major' | 'minor';
+import type {
+  ResultState,
+  ScoreState,
+  Attempt,
+} from './types';
 
 function getRandomNote(notes: NoteDef[]): NoteDef {
   const idx = Math.floor(Math.random() * notes.length);
@@ -23,54 +33,46 @@ function getRandomNote(notes: NoteDef[]): NoteDef {
 }
 
 const EarTrainer: React.FC = () => {
-  const scaleControlHeightRem = 1.5;
+  // Start with no scale and no octave selected so the user must choose
+  const [selectedScaleId, setSelectedScaleId] = useState<string>('');
+  const [selectedOctave, setSelectedOctave] = useState<number | null>(null);
 
-  const [selectedScaleId, setSelectedScaleId] = useState<string>('c-major');
-  const [scaleFilter, setScaleFilter] = useState<ScaleFilterMode>('all');
-  
   const [currentNoteName, setCurrentNoteName] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<ResultState | null>(null);
-  const [score, setScore] = useState<ScoreState>({ correct: 0, total: 0 });
+  const [score, setScore] = useState<ScoreState>({
+    correct: 0,
+    total: 0,
+  });
   const [history, setHistory] = useState<Attempt[]>([]);
   const [nextId, setNextId] = useState<number>(1);
 
-  const currentScale = getScaleById(selectedScaleId);
-  const notes = currentScale.notes;
+  // Build the concrete scale *dynamically* from the selected id + octave
+  const activeScale: ScaleDef | null = useMemo(() => {
+    if (!selectedScaleId || selectedOctave == null) return null;
+    return buildScaleAtOctave(selectedScaleId, selectedOctave);
+  }, [selectedScaleId, selectedOctave]);
 
-  const allScales: ScaleDef[] = SCALES;
-
-  const filteredScales = allScales.filter(scale =>
-    scaleFilter === 'all' ? true : scale.mode === scaleFilter
-  );
+  const notes: NoteDef[] = activeScale?.notes ?? [];
 
   const handleChangeScale = (newId: string) => {
     setSelectedScaleId(newId);
     setCurrentNoteName(null);
     setLastResult(null);
-
-    const newScale = getScaleById(newId);
-    void playScaleSequence(newScale.notes);
   };
 
-  const handleChangeFilterMode = (mode: ScaleFilterMode) => {
-    setScaleFilter(mode);
-
-    const newFiltered = allScales.filter(scale =>
-      mode === 'all' ? true : scale.mode === mode
-    );
-
-    // If current selected scale is not in the new filter, switch to first filtered scale
-    if (!newFiltered.some(scale => scale.id === selectedScaleId) && newFiltered.length > 0) {
-      const first = newFiltered[0];
-      handleChangeScale(first.id);
-    }
+  const handleOctaveChange = (octave: number | null) => {
+    setSelectedOctave(octave);
+    setCurrentNoteName(null);
+    setLastResult(null);
   };
-  
-  const handleReplayScale = () => {
-    void playScaleSequence(notes);
+
+  const handlePlayScale = () => {
+    if (!activeScale) return;
+    void playScaleSequence(activeScale.notes);
   };
 
   const handlePlayNewNote = () => {
+    if (!notes.length) return; // no scale/octave chosen yet
     const note = getRandomNote(notes);
     setCurrentNoteName(note.name);
     setLastResult(null);
@@ -78,7 +80,7 @@ const EarTrainer: React.FC = () => {
   };
 
   const handleReplayNote = () => {
-    if (!currentNoteName) return;
+    if (!currentNoteName || !notes.length) return;
     const note = notes.find(n => n.name === currentNoteName);
     if (!note) return;
     void playFrequency(note.freq);
@@ -126,7 +128,7 @@ const EarTrainer: React.FC = () => {
     score.total === 0
       ? '—'
       : `${score.correct} / ${score.total} (${Math.round(
-          (score.correct / score.total) * 100
+          (score.correct / score.total) * 100,
         )}%)`;
 
   const formatTime = (ts: number) => {
@@ -138,29 +140,34 @@ const EarTrainer: React.FC = () => {
     });
   };
 
+  const canPlayScale = !!activeScale;
+  const canPlayNote = !!activeScale;
+
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>Ear Trainer</h1>
       <p className={styles.subtitle}>
-        Choose a scale, press <strong>Play New Note</strong>, listen, then guess which note you
-        heard.
+        Choose a scale and octave, press <strong>Play New Note</strong>, listen, then
+        guess which note you heard.
       </p>
 
       <ScaleSelector
         selectedScaleId={selectedScaleId}
-        onChangeScale={handleChangeScale}
-        onReplayScale={handleReplayScale}
-        heightRem={scaleControlHeightRem}
-        scales={filteredScales}
-        filterMode={scaleFilter}
-        onChangeFilterMode={handleChangeFilterMode}
+        selectedOctave={selectedOctave}
+        onScaleChange={handleChangeScale}
+        onOctaveChange={handleOctaveChange}
+        onPlayScale={handlePlayScale}       // NEW
+        canPlayScale={canPlayScale}         // NEW
       />
+
+      {/* Play Scale button row removed – now inside ScaleSelector */}
 
       <ControlsRow
         onPlayNewNote={handlePlayNewNote}
         onReplayNote={handleReplayNote}
         onClearHistory={handleClearHistory}
-        disableReplay={!currentNoteName}
+        disablePlayNew={!canPlayNote}
+        disableReplay={!currentNoteName || !canPlayNote}
         disableClear={history.length === 0}
       />
 
@@ -170,12 +177,14 @@ const EarTrainer: React.FC = () => {
 
       <GuessButtons
         notes={notes}
-        currentScaleId={currentScale.id}
-        disabled={!currentNoteName}
+        currentScaleId={activeScale?.id ?? ''}
+        disabled={!currentNoteName || !canPlayNote}
         onGuess={handleGuess}
       />
 
-      {lastResult && <ResultMessage lastResult={lastResult} />}
+      {lastResult && (
+        <ResultMessage lastResult={lastResult} />
+      )}
 
       {!currentNoteName && !lastResult && (
         <p className={styles.hintMessage}>
@@ -186,7 +195,10 @@ const EarTrainer: React.FC = () => {
       <hr className={styles.divider} />
 
       <h2 className={styles.historyTitle}>Session History</h2>
-      <SessionHistory history={history} formatTime={formatTime} />
+      <SessionHistory
+        history={history}
+        formatTime={formatTime}
+      />
     </div>
   );
 };

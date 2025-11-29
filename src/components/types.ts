@@ -18,3 +18,6 @@ export interface Attempt {
   guess: string;
   correct: boolean;
 }
+
+// "any" or an exact accidental count in the key signature
+export type AccidentalFilter = 'any' | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;

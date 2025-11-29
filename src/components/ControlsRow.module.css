@@ -1,0 +1,43 @@
+/* Container row: similar feel to the ScaleSelector groupRow */
+.controlsRow {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  margin: 0.75rem 0;
+  align-items: center;
+}
+
+/* Compact dark buttons */
+.button {
+  padding: 0.25rem 0.6rem;
+  height: 1.8rem;
+  border: 1px solid #444;
+  border-radius: 4px;
+  background-color: #222;
+  color: #eee;
+  font-size: 0.85rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.button:hover:not(:disabled) {
+  background-color: #333;
+  border-color: #666;
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Mobile responsiveness: wrap like the scale selector rows */
+@media (max-width: 600px) {
+  .controlsRow {
+    flex-wrap: wrap;
+  }
+
+  .button {
+    flex: 1 1 45%;
+    min-width: 130px;
+  }
+}
