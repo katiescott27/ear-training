@@ -17,14 +17,13 @@ import {
   clearHistory,
 } from '../store/intervalSlice';
 
-import styles from './TrainerCommon.module.css';
+import styles from './TrainerCommon.module.css'; // shared trainer styles
 
-import ScaleSelector from './ScaleSelector';
+import CurrentScaleBar from './CurrentScaleBar';
 import SessionHistory from './SessionHistory';
 import ResultMessage from './ResultMessage';
 import IntervalGuessButtons from './IntervalGuessButtons';
 
-// Map "steps apart in the scale" -> interval label
 const INTERVAL_LABELS: Record<number, string> = {
   0: 'unison',
   1: '2nd',
@@ -35,11 +34,6 @@ const INTERVAL_LABELS: Record<number, string> = {
   6: '7th',
   7: 'octave',
 };
-
-function getRandomNote(notes: NoteDef[]): NoteDef {
-  const idx = Math.floor(Math.random() * notes.length);
-  return notes[idx];
-}
 
 const IntervalTrainer: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -56,7 +50,6 @@ const IntervalTrainer: React.FC = () => {
     history,
   } = useAppSelector((state) => state.interval);
 
-  // Build the concrete scale from the selected id + octave
   const activeScale: ScaleDef | null = useMemo(() => {
     if (!selectedScaleId || selectedOctave == null) return null;
     return buildScaleAtOctave(selectedScaleId, selectedOctave);
@@ -69,19 +62,15 @@ const IntervalTrainer: React.FC = () => {
     firstNoteName !== null && secondNoteName !== null;
 
   const handlePlayInterval = () => {
-    if (!notes.length) return;
+    if (notes.length < 2) return;
 
-    const first = getRandomNote(notes);
-    let second = getRandomNote(notes);
+    // Always start from the lower root note of the scale
+    const first = notes[0];
 
-    // Optionally avoid unison if multiple notes exist
-    if (notes.length > 1) {
-      let safety = 0;
-      while (second.name === first.name && safety < 10) {
-        second = getRandomNote(notes);
-        safety += 1;
-      }
-    }
+    // Always go UP to another note in the scale (no unison)
+    const secondIndex =
+      1 + Math.floor(Math.random() * (notes.length - 1));
+    const second = notes[secondIndex];
 
     dispatch(
       startNewRound({
@@ -110,6 +99,7 @@ const IntervalTrainer: React.FC = () => {
     const i2 = notes.findIndex((n) => n.name === secondNoteName);
     if (i1 === -1 || i2 === -1) return;
 
+    // We always go up, but abs is fine/safe.
     const steps = Math.abs(i2 - i1);
     const correctLabel =
       INTERVAL_LABELS[steps] ?? `${steps} steps`;
@@ -117,7 +107,8 @@ const IntervalTrainer: React.FC = () => {
     const isCorrect = guessLabel === correctLabel;
     const ts = Date.now();
 
-    const playedDisplay = `${firstNoteName} → ${secondNoteName}`;
+    // Include the interval distance in the displayed "played" field
+    const playedDisplay = `${firstNoteName} → ${secondNoteName} (${correctLabel})`;
 
     dispatch(
       recordAttempt({
@@ -130,12 +121,6 @@ const IntervalTrainer: React.FC = () => {
 
     dispatch(clearIntervalNotes());
   };
-
-  const handlePlayScale = () => {
-    if (!activeScale) return;
-    void playScaleSequence(activeScale.notes);
-  };
-
 
   const handleClearIntervalHistory = () => {
     dispatch(clearHistory());
@@ -159,15 +144,12 @@ const IntervalTrainer: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      {/* GameScreen already shows the title; you can keep this small or remove it */}
       <p className={styles.subtitle}>
-        Choose a scale and octave, then play and identify intervals.
+        Listen to two notes and identify the interval in the current scale.
       </p>
 
-      {/* Scale + octave selection (Play Scale button lives inside ScaleSelector now) */}
-      <ScaleSelector onPlayScale={handlePlayScale} />
+      <CurrentScaleBar />
 
-      {/* Interval game controls */}
       <div className={styles.controlsRow}>
         <button
           type="button"
@@ -204,9 +186,7 @@ const IntervalTrainer: React.FC = () => {
         onGuess={handleGuessInterval}
       />
 
-      {lastResult && (
-        <ResultMessage lastResult={lastResult} />
-      )}
+      {lastResult && <ResultMessage lastResult={lastResult} />}
 
       {!intervalActive && !lastResult && (
         <p className={styles.hintMessage}>

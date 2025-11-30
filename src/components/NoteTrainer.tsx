@@ -8,10 +8,7 @@ import {
   type ScaleDef,
 } from '../audio/notes';
 
-import {
-  playFrequency,
-  playScaleSequence,
-} from '../audio/playNote';
+import { playFrequency } from '../audio/playNote';
 
 import { useAppDispatch, useAppSelector } from '../store/hooks';
 import {
@@ -23,7 +20,7 @@ import {
 
 import styles from './TrainerCommon.module.css';
 
-import ScaleSelector from './ScaleSelector';
+import CurrentScaleBar from './CurrentScaleBar';
 import ControlsRow from './ControlsRow';
 import GuessButtons from './GuessButtons';
 import ResultMessage from './ResultMessage';
@@ -48,7 +45,6 @@ const NoteTrainer: React.FC = () => {
     history,
   } = useAppSelector((state) => state.noteGuess);
 
-  // Build the concrete scale from the selected id + octave
   const activeScale: ScaleDef | null = useMemo(() => {
     if (!selectedScaleId || selectedOctave == null) return null;
     return buildScaleAtOctave(selectedScaleId, selectedOctave);
@@ -57,16 +53,8 @@ const NoteTrainer: React.FC = () => {
   const notes: NoteDef[] = activeScale?.notes ?? [];
   const canPlayNote = !!activeScale;
 
-  // === Play scale (delegated to ScaleSelector button) ===
-  const handlePlayScale = () => {
-    if (!activeScale) return;
-    void playScaleSequence(activeScale.notes);
-  };
-
-  // === NOTE GAME ===
-
   const handlePlayNewNote = () => {
-    if (!notes.length) return; // no scale/octave chosen yet
+    if (!notes.length) return;
     const note = getRandomNote(notes);
     dispatch(startNewRound({ noteName: note.name }));
     void playFrequency(note.freq);
@@ -119,13 +107,11 @@ const NoteTrainer: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      {/* GameScreen shows the big title; this can be a softer subtitle */}
       <p className={styles.subtitle}>
-        Choose a scale and octave, then listen and identify single notes.
+        Listen and identify single notes in the current scale.
       </p>
 
-      {/* Scale + octave + Play Scale (button lives inside ScaleSelector) */}
-      <ScaleSelector onPlayScale={handlePlayScale} />
+      <CurrentScaleBar />
 
       <ControlsRow
         onPlayNewNote={handlePlayNewNote}

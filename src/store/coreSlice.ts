@@ -12,8 +12,8 @@ export interface CoreState {
 
 const initialState: CoreState = {
   mode: 'singleNote',
-  selectedScaleId: '',
-  selectedOctave: null,
+  selectedScaleId: 'c-major',
+  selectedOctave: 4,
 };
 
 const coreSlice = createSlice({
