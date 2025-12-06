@@ -7,7 +7,7 @@ import type {
   Attempt,
 } from '../components/types';
 
-export interface NoteGuessState {
+export interface NoteTrainerState {
   currentNoteName: string | null;
   lastResult: ResultState | null;
   score: ScoreState;
@@ -15,7 +15,7 @@ export interface NoteGuessState {
   nextId: number;
 }
 
-const initialState: NoteGuessState = {
+const initialState: NoteTrainerState = {
   currentNoteName: null,
   lastResult: null,
   score: {
@@ -26,8 +26,8 @@ const initialState: NoteGuessState = {
   nextId: 1,
 };
 
-const noteGuessSlice = createSlice({
-  name: 'noteGuess',
+const noteTrainerSlice = createSlice({
+  name: 'noteTrainer',
   initialState,
   reducers: {
     startNewRound(state, action: PayloadAction<{ noteName: string }>) {
@@ -84,7 +84,7 @@ export const {
   clearCurrentNote,
   recordAttempt,
   clearHistory,
-} = noteGuessSlice.actions;
+} = noteTrainerSlice.actions;
 
-export const noteGuessReducer = noteGuessSlice.reducer;
-export default noteGuessReducer;
+export const noteTrainerReducer = noteTrainerSlice.reducer;
+export default noteTrainerReducer;

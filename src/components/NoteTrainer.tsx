@@ -16,7 +16,7 @@ import {
   clearCurrentNote,
   recordAttempt,
   clearHistory,
-} from '../store/noteGuessSlice';
+} from '../store/noteTrainerSlice';
 
 import styles from './TrainerCommon.module.css';
 
@@ -43,7 +43,7 @@ const NoteTrainer: React.FC = () => {
     lastResult,
     score,
     history,
-  } = useAppSelector((state) => state.noteGuess);
+  } = useAppSelector((state) => state.noteTrainer);
 
   const activeScale: ScaleDef | null = useMemo(() => {
     if (!selectedScaleId || selectedOctave == null) return null;

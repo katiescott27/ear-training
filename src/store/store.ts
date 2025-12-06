@@ -4,15 +4,15 @@ import { configureStore } from '@reduxjs/toolkit';
 
 import { uiReducer } from './uiSlice';
 import { coreReducer } from './coreSlice';
-import { noteGuessReducer } from './noteGuessSlice';
-import { intervalReducer } from './intervalSlice';
+import { noteTrainerReducer } from './noteTrainerSlice';
+import { intervalTrainerReducer } from './intervalTrainerSlice';
 
 export const store = configureStore({
   reducer: {
     ui: uiReducer,
     core: coreReducer,
-    noteGuess: noteGuessReducer,
-    interval: intervalReducer,
+    noteTrainer: noteTrainerReducer,
+    intervalTrainer: intervalTrainerReducer,
   },
 });
 

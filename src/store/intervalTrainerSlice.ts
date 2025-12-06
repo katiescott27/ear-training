@@ -1,4 +1,4 @@
-// src/store/intervalSlice.ts
+// src/store/intervalTrainerSlice.ts
 
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type {
@@ -7,7 +7,7 @@ import type {
   Attempt,
 } from '../components/types';
 
-export interface IntervalState {
+export interface IntervalTrainerState {
   firstNoteName: string | null;
   secondNoteName: string | null;
   lastResult: ResultState | null;
@@ -16,7 +16,7 @@ export interface IntervalState {
   nextId: number;
 }
 
-const initialState: IntervalState = {
+const initialState: IntervalTrainerState = {
   firstNoteName: null,
   secondNoteName: null,
   lastResult: null,
@@ -28,8 +28,8 @@ const initialState: IntervalState = {
   nextId: 1,
 };
 
-const intervalSlice = createSlice({
-  name: 'interval',
+const intervalTrainerSlice = createSlice({
+  name: 'intervalTrainer',
   initialState,
   reducers: {
     startNewRound(
@@ -95,7 +95,7 @@ export const {
   clearIntervalNotes,
   recordAttempt,
   clearHistory,
-} = intervalSlice.actions;
+} = intervalTrainerSlice.actions;
 
-export const intervalReducer = intervalSlice.reducer;
-export default intervalReducer;
+export const intervalTrainerReducer = intervalTrainerSlice.reducer;
+export default intervalTrainerReducer;

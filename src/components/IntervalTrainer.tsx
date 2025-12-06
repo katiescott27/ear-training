@@ -15,14 +15,14 @@ import {
   clearIntervalNotes,
   recordAttempt,
   clearHistory,
-} from '../store/intervalSlice';
-
-import styles from './TrainerCommon.module.css'; // shared trainer styles
+} from '../store/intervalTrainerSlice';
 
 import CurrentScaleBar from './CurrentScaleBar';
 import SessionHistory from './SessionHistory';
 import ResultMessage from './ResultMessage';
 import IntervalGuessButtons from './IntervalGuessButtons';
+
+import styles from './TrainerCommon.module.css'; // shared trainer styles
 
 const INTERVAL_LABELS: Record<number, string> = {
   0: 'unison',
@@ -48,7 +48,7 @@ const IntervalTrainer: React.FC = () => {
     lastResult,
     score,
     history,
-  } = useAppSelector((state) => state.interval);
+  } = useAppSelector((state) => state.intervalTrainer);
 
   const activeScale: ScaleDef | null = useMemo(() => {
     if (!selectedScaleId || selectedOctave == null) return null;
