@@ -5,11 +5,13 @@ import React, { useMemo } from 'react';
 import {
   buildScaleAtOctave,
   type ScaleDef,
+  type NoteDef,
 } from '../../audio/notes';
 
 import { playScaleSequence } from '../../audio/playNote';
 import { useAppSelector, useAppDispatch } from '../../store/hooks';
 import { openScaleSelector } from '../../store/uiSlice';
+import { setHighlightedNote } from '../../store/noteTrainerSlice';
 
 import styles from './CurrentScaleBar.module.css';
 
@@ -17,7 +19,7 @@ const CurrentScaleBar: React.FC = () => {
   const dispatch = useAppDispatch();
 
   const { selectedScaleId, selectedOctave } = useAppSelector(
-    (state) => state.core
+    (state) => state.core,
   );
 
   const activeScale: ScaleDef | null = useMemo(() => {
@@ -25,14 +27,21 @@ const CurrentScaleBar: React.FC = () => {
     return buildScaleAtOctave(selectedScaleId, selectedOctave);
   }, [selectedScaleId, selectedOctave]);
 
-  const label =
-    activeScale?.label ??
-    activeScale?.id ??
-    "C Major";
+  const label = activeScale?.label ?? activeScale?.id ?? 'C Major';
 
   const handlePlayScale = () => {
     if (!activeScale) return;
-    void playScaleSequence(activeScale.notes);
+
+    const notes: NoteDef[] = activeScale.notes;
+    if (!notes.length) return;
+
+    void playScaleSequence(notes, 0.6, 0.1, (noteOrNull) => {
+      if (!noteOrNull) {
+        dispatch(setHighlightedNote(null));
+      } else {
+        dispatch(setHighlightedNote(noteOrNull.freq));
+      }
+    });
   };
 
   return (

@@ -63,6 +63,13 @@
   cursor: not-allowed;
 }
 
+.guessButtonHighlighted {
+  transform: scale(1.05);
+  font-weight: 700;
+  box-shadow: 0 0 8px rgba(255, 255, 0, 0.8);
+  background: #444;
+}
+
 /* Result text */
 .resultMessage {
   margin-bottom: 1rem;

@@ -13,6 +13,7 @@ export interface NoteTrainerState {
   score: ScoreState;
   history: Attempt[];
   nextId: number;
+  highlightedNoteFreq: number | null;
 }
 
 const initialState: NoteTrainerState = {
@@ -24,6 +25,7 @@ const initialState: NoteTrainerState = {
   },
   history: [],
   nextId: 1,
+  highlightedNoteFreq: null
 };
 
 const noteTrainerSlice = createSlice({
@@ -76,6 +78,9 @@ const noteTrainerSlice = createSlice({
       state.lastResult = null;
       state.currentNoteName = null;
     },
+    setHighlightedNote(state, action: PayloadAction<number | null>) {
+      state.highlightedNoteFreq = action.payload;
+    },
   },
 });
 
@@ -84,6 +89,7 @@ export const {
   clearCurrentNote,
   recordAttempt,
   clearHistory,
+  setHighlightedNote,
 } = noteTrainerSlice.actions;
 
 export const noteTrainerReducer = noteTrainerSlice.reducer;
