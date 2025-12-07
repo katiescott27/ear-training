@@ -19,9 +19,9 @@ const GameMenu: React.FC = () => {
         <button
           type="button"
           className={styles.gameButton}
-          onClick={() => dispatch(selectGame('noteGuess'))}
+          onClick={() => dispatch(selectGame('noteTrainer'))}
         >
-          Note Guess
+          Note Trainer
         </button>
 
         <button

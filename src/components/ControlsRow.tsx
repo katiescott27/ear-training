@@ -1,22 +1,32 @@
+import { useAppSelector } from '../store/hooks';
 import styles from './ControlsRow.module.css';
 
 interface ControlsRowProps {
   onPlayNewNote: () => void;
   onReplayNote: () => void;
   onClearHistory: () => void;
-  disablePlayNew: boolean;
-  disableReplay: boolean;
-  disableClear: boolean;
 }
 
 const ControlsRow: React.FC<ControlsRowProps> = ({
   onPlayNewNote,
   onReplayNote,
-  onClearHistory,
-  disablePlayNew,
-  disableReplay,
-  disableClear,
+  onClearHistory
 }) => {
+
+  const { selectedScaleId, selectedOctave } = useAppSelector(
+    (state) => state.core,
+  );
+
+  const { currentNoteName, history } = useAppSelector(
+    (state) => state.noteTrainer,
+  );
+
+  const canPlayNote = !!selectedScaleId && selectedOctave != null;
+
+  const disablePlayNew = !canPlayNote;
+  const disableReplay = !canPlayNote || !currentNoteName;
+  const disableClear = history.length === 0;
+
   return (
     <div className={styles.controlsRow}>
       <button

@@ -51,7 +51,6 @@ const NoteTrainer: React.FC = () => {
   }, [selectedScaleId, selectedOctave]);
 
   const notes: NoteDef[] = activeScale?.notes ?? [];
-  const canPlayNote = !!activeScale;
 
   const handlePlayNewNote = () => {
     if (!notes.length) return;
@@ -117,9 +116,6 @@ const NoteTrainer: React.FC = () => {
         onPlayNewNote={handlePlayNewNote}
         onReplayNote={handleReplayNote}
         onClearHistory={handleClearNoteHistory}
-        disablePlayNew={!canPlayNote}
-        disableReplay={!currentNoteName || !canPlayNote}
-        disableClear={history.length === 0}
       />
 
       <div className={styles.scoreRow}>
@@ -127,9 +123,6 @@ const NoteTrainer: React.FC = () => {
       </div>
 
       <GuessButtons
-        notes={notes}
-        currentScaleId={activeScale?.id ?? ''}
-        disabled={!currentNoteName || !canPlayNote}
         onGuess={handleGuessNote}
       />
 

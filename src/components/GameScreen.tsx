@@ -20,8 +20,8 @@ const GameScreen: React.FC<GameScreenProps> = ({ gameId }) => {
   let content: React.ReactNode;
 
   switch (gameId) {
-    case 'noteGuess':
-      title = 'Note Guess';
+    case 'noteTrainer':
+      title = 'Note Trainer';
       content = <NoteTrainer />;
       break;
 

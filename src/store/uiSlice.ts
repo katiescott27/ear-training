@@ -1,7 +1,7 @@
 // src/store/uiSlice.ts
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
-export type GameId = 'noteGuess' | 'intervalTrainer';
+export type GameId = 'noteTrainer' | 'intervalTrainer';
 
 interface UiState {
   activeGameId: GameId | null;   // null = show main menu
