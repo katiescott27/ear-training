@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './TrainerCommon.module.css';
-import type { Attempt } from './types';
+import type { Attempt } from '../types';
 
 interface SessionHistoryProps {
   history: Attempt[];

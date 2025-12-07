@@ -1,4 +1,4 @@
-import { useAppSelector } from '../store/hooks';
+import { useAppSelector } from '../../store/hooks';
 import styles from './ControlsRow.module.css';
 
 interface ControlsRowProps {

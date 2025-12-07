@@ -3,10 +3,10 @@
 import React from 'react';
 import { useMemo } from 'react';
 
-import { useAppSelector } from '../store/hooks';
-import { buildScaleAtOctave, type NoteDef, type ScaleDef } from '../audio/notes';
+import { useAppSelector } from '../../store/hooks';
+import { buildScaleAtOctave, type NoteDef, type ScaleDef } from '../../audio/notes';
 
-import styles from './TrainerCommon.module.css';
+import styles from '../common/TrainerCommon.module.css';
 
 interface GuessButtonsProps {
   onGuess: (noteName: string) => void;

@@ -3,9 +3,9 @@
 import React from 'react';
 import { useAppSelector } from './store/hooks';
 
-import GameMenu from './components/GameMenu';
-import GameScreen from './components/GameScreen';
-import ScaleSelectorScreen from './components/ScaleSelectorScreen';
+import GameMenu from './components/ui/GameMenu';
+import GameScreen from './components/ui/GameScreen';
+import ScaleSelectorScreen from './components/scale-selector/ScaleSelectorScreen';
 
 import './global.css';
 

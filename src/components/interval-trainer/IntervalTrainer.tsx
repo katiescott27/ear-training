@@ -6,23 +6,23 @@ import {
   buildScaleAtOctave,
   type NoteDef,
   type ScaleDef,
-} from '../audio/notes';
-import { playScaleSequence } from '../audio/playNote';
+} from '../../audio/notes';
+import { playScaleSequence } from '../../audio/playNote';
 
-import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   startNewRound,
   clearIntervalNotes,
   recordAttempt,
   clearHistory,
-} from '../store/intervalTrainerSlice';
+} from '../../store/intervalTrainerSlice';
 
-import CurrentScaleBar from './CurrentScaleBar';
-import SessionHistory from './SessionHistory';
-import ResultMessage from './ResultMessage';
+import CurrentScaleBar from '../scale-selector/CurrentScaleBar';
+import SessionHistory from '../common/SessionHistory';
+import ResultMessage from '../common/ResultMessage';
 import IntervalGuessButtons from './IntervalGuessButtons';
 
-import styles from './TrainerCommon.module.css'; // shared trainer styles
+import styles from '../common/TrainerCommon.module.css'; // shared trainer styles
 
 const INTERVAL_LABELS: Record<number, string> = {
   0: 'unison',

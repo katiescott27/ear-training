@@ -1,13 +1,13 @@
 // src/components/GameScreen.tsx
 import React from 'react';
 
-import { useAppDispatch } from '../store/hooks';
-import { backToMenu, type GameId } from '../store/uiSlice';
+import { useAppDispatch } from '../../store/hooks';
+import { backToMenu, type GameId } from '../../store/uiSlice';
 
-import NoteTrainer from './NoteTrainer';
-import IntervalTrainer from './IntervalTrainer';
+import NoteTrainer from '../note-trainer/NoteTrainer';
+import IntervalTrainer from '../interval-trainer/IntervalTrainer';
 
-import styles from './TrainerCommon.module.css';
+import styles from '../common/TrainerCommon.module.css';
 
 interface GameScreenProps {
   gameId: GameId;

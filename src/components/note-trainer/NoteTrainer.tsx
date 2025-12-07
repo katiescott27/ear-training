@@ -6,25 +6,25 @@ import {
   buildScaleAtOctave,
   type NoteDef,
   type ScaleDef,
-} from '../audio/notes';
+} from '../../audio/notes';
 
-import { playFrequency } from '../audio/playNote';
+import { playFrequency } from '../../audio/playNote';
 
-import { useAppDispatch, useAppSelector } from '../store/hooks';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
 import {
   startNewRound,
   clearCurrentNote,
   recordAttempt,
   clearHistory,
-} from '../store/noteTrainerSlice';
+} from '../../store/noteTrainerSlice';
 
-import styles from './TrainerCommon.module.css';
+import styles from '../common/TrainerCommon.module.css';
 
-import CurrentScaleBar from './CurrentScaleBar';
+import CurrentScaleBar from '../scale-selector/CurrentScaleBar';
 import ControlsRow from './ControlsRow';
 import GuessButtons from './GuessButtons';
-import ResultMessage from './ResultMessage';
-import SessionHistory from './SessionHistory';
+import ResultMessage from '../common/ResultMessage';
+import SessionHistory from '../common/SessionHistory';
 
 function getRandomNote(notes: NoteDef[]): NoteDef {
   const idx = Math.floor(Math.random() * notes.length);

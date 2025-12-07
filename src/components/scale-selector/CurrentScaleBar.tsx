@@ -5,11 +5,11 @@ import React, { useMemo } from 'react';
 import {
   buildScaleAtOctave,
   type ScaleDef,
-} from '../audio/notes';
+} from '../../audio/notes';
 
-import { playScaleSequence } from '../audio/playNote';
-import { useAppSelector, useAppDispatch } from '../store/hooks';
-import { openScaleSelector } from '../store/uiSlice';
+import { playScaleSequence } from '../../audio/playNote';
+import { useAppSelector, useAppDispatch } from '../../store/hooks';
+import { openScaleSelector } from '../../store/uiSlice';
 
 import styles from './CurrentScaleBar.module.css';
 

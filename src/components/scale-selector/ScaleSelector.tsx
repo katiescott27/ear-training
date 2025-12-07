@@ -4,9 +4,9 @@ import React from 'react';
 import {
   getAllScaleSpecs,
   type ScaleMode,
-} from '../audio/notes';
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { setScaleId, setOctave } from '../store/coreSlice';
+} from '../../audio/notes';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { setScaleId, setOctave } from '../../store/coreSlice';
 
 import styles from './ScaleSelector.module.css';
 

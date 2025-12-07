@@ -1,7 +1,7 @@
 // src/components/IntervalGuessButtons.tsx
 
 import React from 'react';
-import styles from './TrainerCommon.module.css';
+import styles from '../common/TrainerCommon.module.css';
 
 const INTERVAL_OPTIONS = [
   'unison',

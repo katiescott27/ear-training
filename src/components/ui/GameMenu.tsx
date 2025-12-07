@@ -1,8 +1,8 @@
 // src/components/GameMenu.tsx
 import React from 'react';
 
-import { useAppDispatch } from '../store/hooks';
-import { selectGame } from '../store/uiSlice';
+import { useAppDispatch } from '../../store/hooks';
+import { selectGame } from '../../store/uiSlice';
 
 import styles from './GameMenu.module.css';
 

@@ -5,13 +5,13 @@ import React, { useMemo } from 'react';
 import {
   buildScaleAtOctave,
   type ScaleDef,
-} from '../audio/notes';
-import { playScaleSequence } from '../audio/playNote';
+} from '../../audio/notes';
+import { playScaleSequence } from '../../audio/playNote';
 
-import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { closeScaleSelector } from '../store/uiSlice';
+import { useAppDispatch, useAppSelector } from '../../store/hooks';
+import { closeScaleSelector } from '../../store/uiSlice';
 
-import styles from './GameScreen.module.css';
+import styles from '../ui/GameScreen.module.css';
 import ScaleSelector from './ScaleSelector';
 
 const ScaleSelectorScreen: React.FC = () => {
