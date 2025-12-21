@@ -26,6 +26,8 @@
     * Chords
     * Modes (dorian phrygian etc)
     * Circle of fifths theory?
+    * Beating Demo
+    * Lock-in challenge
 
 ## Styling
 
